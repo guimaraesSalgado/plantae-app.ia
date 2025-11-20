@@ -105,6 +105,21 @@ export default {
       },
       transitionTimingFunction: {
         apple: 'cubic-bezier(0.42, 0, 0.58, 1)',
+        organic: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+      },
+      keyframes: {
+        'page-enter': {
+          '0%': { opacity: '0', transform: 'translateY(15px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'drawer-item-enter': {
+          '0%': { opacity: '0', transform: 'translateX(-10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        'page-enter': 'page-enter 0.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards',
+        'drawer-item': 'drawer-item-enter 0.3s ease-out forwards',
       },
     },
   },
