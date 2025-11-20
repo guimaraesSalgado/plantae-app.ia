@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { getPlantById, savePlant } from '@/lib/storage'
+import { PlantsService } from '@/services/plants'
 import { Planta } from '@/types'
 
 export default function EditPlant() {
@@ -24,41 +24,48 @@ export default function EditPlant() {
 
   useEffect(() => {
     if (id) {
-      const foundPlant = getPlantById(id)
-      if (foundPlant) {
-        setPlant(foundPlant)
-        setApelido(foundPlant.apelido)
-        setNomeConhecido(foundPlant.nome_conhecido)
-        setNomeCientifico(foundPlant.nome_cientifico || '')
-        setObservacoes(foundPlant.observacoes || '')
-      } else {
-        navigate('/404')
-      }
+      PlantsService.getPlantById(id).then((foundPlant) => {
+        if (foundPlant) {
+          setPlant(foundPlant)
+          setApelido(foundPlant.apelido)
+          setNomeConhecido(foundPlant.nome_conhecido)
+          setNomeCientifico(foundPlant.nome_cientifico || '')
+          setObservacoes(foundPlant.observacoes || '')
+        } else {
+          navigate('/404')
+        }
+      })
     }
   }, [id, navigate])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!plant) return
 
     setIsLoading(true)
-    // Simulate network delay for smooth UX
-    setTimeout(() => {
-      const updatedPlant: Planta = {
-        ...plant,
-        apelido,
-        nome_conhecido: nomeConhecido,
-        nome_cientifico: nomeCientifico,
-        observacoes,
-      }
 
-      savePlant(updatedPlant)
-      setIsLoading(false)
+    const updates: Partial<Planta> = {
+      apelido,
+      nome_conhecido: nomeConhecido,
+      nome_cientifico: nomeCientifico,
+      observacoes,
+    }
+
+    const updatedPlant = await PlantsService.updatePlant(plant.id, updates)
+    setIsLoading(false)
+
+    if (updatedPlant) {
       toast({
         title: 'Planta atualizada',
         description: 'As informações foram salvas com sucesso.',
       })
       navigate(`/plant/${plant.id}`)
-    }, 800)
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: 'Não foi possível atualizar a planta.',
+      })
+    }
   }
 
   if (!plant) return null

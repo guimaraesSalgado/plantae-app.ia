@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { getPlantById, savePlant, addCareLog } from '@/lib/storage'
+import { PlantsService } from '@/services/plants'
 import { identifyPlant } from '@/services/plantsAI'
 import { Planta, CareLog } from '@/types'
 import { format, parseISO } from 'date-fns'
@@ -60,12 +60,13 @@ export default function PlantDetails() {
 
   useEffect(() => {
     if (id) {
-      const foundPlant = getPlantById(id)
-      if (foundPlant) {
-        setPlant(foundPlant)
-      } else {
-        navigate('/404')
-      }
+      PlantsService.getPlantById(id).then((foundPlant) => {
+        if (foundPlant) {
+          setPlant(foundPlant)
+        } else {
+          navigate('/404')
+        }
+      })
     }
   }, [id, navigate])
 
@@ -83,8 +84,7 @@ export default function PlantDetails() {
         try {
           const result = await identifyPlant(newImage)
 
-          const updatedPlant: Planta = {
-            ...plant,
+          const updates: Partial<Planta> = {
             status_saude: result.status_saude || plant.status_saude,
             pontos_positivos: result.pontos_positivos || plant.pontos_positivos,
             pontos_negativos: result.pontos_negativos || plant.pontos_negativos,
@@ -106,14 +106,20 @@ export default function PlantDetails() {
             type: 'foto',
             note: 'Análise de saúde via foto',
           }
-          updatedPlant.logs = [log, ...(updatedPlant.logs || [])]
+          updates.logs = [log, ...(plant.logs || [])]
 
-          savePlant(updatedPlant)
-          setPlant(updatedPlant)
-          toast({
-            title: 'Saúde atualizada!',
-            description: 'As informações da planta foram renovadas.',
-          })
+          const updatedPlant = await PlantsService.updatePlant(
+            plant.id,
+            updates,
+          )
+
+          if (updatedPlant) {
+            setPlant(updatedPlant)
+            toast({
+              title: 'Saúde atualizada!',
+              description: 'As informações da planta foram renovadas.',
+            })
+          }
         } catch (error) {
           toast({
             variant: 'destructive',
@@ -128,7 +134,7 @@ export default function PlantDetails() {
     }
   }
 
-  const handleAddLog = () => {
+  const handleAddLog = async () => {
     if (!plant) return
 
     const log: CareLog = {
@@ -138,14 +144,20 @@ export default function PlantDetails() {
       note: newLogNote,
     }
 
-    addCareLog(plant.id, log)
-    setPlant(getPlantById(plant.id)) // Refresh
-    setIsLogDialogOpen(false)
-    setNewLogNote('')
-    toast({
-      title: 'Histórico atualizado',
-      description: 'O cuidado foi registrado com sucesso.',
+    const updatedLogs = [log, ...(plant.logs || [])]
+    const updatedPlant = await PlantsService.updatePlant(plant.id, {
+      logs: updatedLogs,
     })
+
+    if (updatedPlant) {
+      setPlant(updatedPlant)
+      setIsLogDialogOpen(false)
+      setNewLogNote('')
+      toast({
+        title: 'Histórico atualizado',
+        description: 'O cuidado foi registrado com sucesso.',
+      })
+    }
   }
 
   if (!plant) return null

@@ -1,5 +1,16 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Leaf, Home, PlusCircle, Cloud, Moon, Sun } from 'lucide-react'
+import {
+  Menu,
+  Leaf,
+  Home,
+  PlusCircle,
+  Cloud,
+  Moon,
+  Sun,
+  User,
+  LogOut,
+  Settings,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -8,6 +19,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
 import { requestNotificationPermission } from '@/services/notifications'
 import { CareMonitorService } from '@/services/careMonitor'
@@ -16,12 +28,14 @@ import { getSyncConfig } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
 import { Switch } from '@/components/ui/switch'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { user, profile, signOut } = useAuth()
 
   // Check for notifications and permissions
   useEffect(() => {
@@ -58,9 +72,10 @@ export default function Layout() {
   }, [location.pathname])
 
   const navItems = [
-    { path: '/', label: 'Início', icon: Home },
+    { path: '/', label: 'Plantas', icon: Home },
     { path: '/add', label: 'Adicionar Planta', icon: PlusCircle },
-    { path: '/sync-backup', label: 'Sincronização e Backup', icon: Cloud },
+    { path: '/profile', label: 'Editar Dados Cadastrais', icon: User },
+    { path: '/sync-backup', label: 'Configurações', icon: Settings }, // Mapped SyncBackup to Settings for now as per user story
   ]
 
   const handleNavigation = (path: string) => {
@@ -74,6 +89,11 @@ export default function Layout() {
     setTimeout(() => {
       navigate(path)
     }, 300)
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
   }
 
   const toggleTheme = (checked: boolean) => {
@@ -98,15 +118,30 @@ export default function Layout() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[300px] sm:w-[350px] border-r-border bg-card"
+              className="w-[300px] sm:w-[350px] border-r-border bg-card p-0 flex flex-col"
             >
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-brand-dark dark:text-foreground text-xl font-display font-bold">
-                  <Leaf className="h-6 w-6 text-primary" />
-                  plantae
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="mt-8 flex flex-col gap-2">
+              {/* Menu Header with Gradient */}
+              <div className="bg-gradient-to-br from-[#065f46] to-[#10b981] p-6 pt-10 text-white">
+                <div className="flex items-center gap-4 mb-4">
+                  <Avatar className="h-16 w-16 border-2 border-white/50 shadow-md">
+                    <AvatarImage src={profile?.foto_perfil_url || undefined} />
+                    <AvatarFallback className="bg-white/20 text-white text-xl">
+                      {profile?.nome?.charAt(0).toUpperCase() ||
+                        user?.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg truncate">
+                      {profile?.nome || 'Jardineiro'}
+                    </h3>
+                    <p className="text-xs text-white/80 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
                 {navItems.map((item, index) => {
                   const isActive = location.pathname === item.path
                   return (
@@ -138,7 +173,7 @@ export default function Layout() {
 
                 {/* Theme Toggle in Menu */}
                 <div
-                  className="mt-4 px-4 py-3 flex items-center justify-between border-t border-border animate-drawer-item"
+                  className="mt-auto px-4 py-3 flex items-center justify-between border-t border-border animate-drawer-item"
                   style={{ animationDelay: '200ms' }}
                 >
                   <div className="flex items-center gap-3 text-foreground/80">
@@ -154,6 +189,15 @@ export default function Layout() {
                     onCheckedChange={toggleTheme}
                   />
                 </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-3 text-base font-medium rounded-xl transition-all duration-200 w-full text-left text-destructive hover:bg-destructive/10 animate-drawer-item"
+                  style={{ animationDelay: '250ms' }}
+                >
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </button>
               </nav>
             </SheetContent>
           </Sheet>

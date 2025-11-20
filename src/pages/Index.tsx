@@ -4,14 +4,8 @@ import { Search, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PlantCard } from '@/components/PlantCard'
 import { AttentionCarousel } from '@/components/AttentionCarousel'
-import {
-  getPlants,
-  deletePlant,
-  isOnboardingCompleted,
-  getViewPreference,
-  saveViewPreference,
-  ViewMode,
-} from '@/lib/storage'
+import { getViewPreference, saveViewPreference, ViewMode } from '@/lib/storage'
+import { PlantsService } from '@/services/plants'
 import { Planta } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -39,20 +33,24 @@ export default function Index() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  const loadPlants = () => {
+  const loadPlants = async () => {
     setIsLoading(true)
-    // Simulate small delay for smooth feel
-    setTimeout(() => {
-      setPlants(getPlants())
+    try {
+      const data = await PlantsService.getPlants()
+      setPlants(data)
+    } catch (error) {
+      console.error(error)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar plantas',
+        description: 'Não foi possível buscar suas plantas.',
+      })
+    } finally {
       setIsLoading(false)
-    }, 300)
+    }
   }
 
   useEffect(() => {
-    if (!isOnboardingCompleted()) {
-      navigate('/onboarding')
-      return
-    }
     setViewMode(getViewPreference())
     loadPlants()
   }, [navigate])
@@ -61,13 +59,21 @@ export default function Index() {
     navigate(`/plant/${id}`)
   }
 
-  const handleDeletePlant = (id: string) => {
-    deletePlant(id)
-    loadPlants()
-    toast({
-      title: 'Planta removida',
-      description: 'A planta foi removida com sucesso.',
-    })
+  const handleDeletePlant = async (id: string) => {
+    const success = await PlantsService.deletePlant(id)
+    if (success) {
+      loadPlants()
+      toast({
+        title: 'Planta removida',
+        description: 'A planta foi removida com sucesso.',
+      })
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao remover',
+        description: 'Tente novamente.',
+      })
+    }
   }
 
   const handleViewModeChange = (value: string) => {
@@ -114,13 +120,11 @@ export default function Index() {
 
   // Attention Plants Logic
   const attentionPlants = useMemo(() => {
-    const notifications = CareMonitorService.checkPlantStatus()
-    const attentionIds = new Set(notifications.map((n) => n.plantId))
+    // Note: CareMonitorService currently uses local storage.
+    // Ideally, it should be updated to use PlantsService or pass plants as arg.
+    // For now, we filter based on status directly from fetched plants.
     return plants.filter(
-      (p) =>
-        p.status_saude === 'critico' ||
-        p.status_saude === 'atencao' ||
-        attentionIds.has(p.id),
+      (p) => p.status_saude === 'critico' || p.status_saude === 'atencao',
     )
   }, [plants])
 

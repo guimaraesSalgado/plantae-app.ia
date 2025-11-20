@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Camera,
-  Upload,
   Loader2,
   ArrowLeft,
   CheckCircle2,
@@ -16,9 +15,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { identifyPlant, AIAnalysisResult } from '@/services/plantsAI'
-import { savePlant } from '@/lib/storage'
+import { PlantsService } from '@/services/plants'
+import { StorageService } from '@/services/storage'
 import { Planta } from '@/types'
-import { v4 as uuidv4 } from 'uuid'
 import { ScanningEffect } from '@/components/ScanningEffect'
 import { Badge } from '@/components/ui/badge'
 
@@ -30,6 +29,7 @@ export default function AddPlant() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [nickname, setNickname] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(
     null,
   )
@@ -80,31 +80,57 @@ export default function AddPlant() {
     fileInputRef.current?.click()
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!imagePreview || !analysisResult) return
 
-    const newPlant: Planta = {
-      id: uuidv4(),
-      apelido: nickname || analysisResult.nome_conhecido || 'Minha Planta',
-      nome_conhecido: analysisResult.nome_conhecido || 'Desconhecida',
-      nome_cientifico: analysisResult.nome_cientifico,
-      foto_url: imagePreview,
-      status_saude: analysisResult.status_saude || 'desconhecido',
-      pontos_positivos: analysisResult.pontos_positivos || [],
-      pontos_negativos: analysisResult.pontos_negativos || [],
-      cuidados_recomendados: analysisResult.cuidados_recomendados || [],
-      vitaminas_e_adubos: analysisResult.vitaminas_e_adubos || [],
-      datas_importantes: analysisResult.datas_importantes || {},
-      logs: [],
-      createdAt: new Date().toISOString(),
-    }
+    setIsSaving(true)
+    try {
+      // 1. Upload Image to Supabase Storage
+      const publicUrl = await StorageService.uploadBase64Image(
+        imagePreview,
+        'plant-photos',
+      )
 
-    savePlant(newPlant)
-    toast({
-      title: 'Planta salva!',
-      description: 'Sua planta foi adicionada ao jardim.',
-    })
-    navigate('/')
+      if (!publicUrl) {
+        throw new Error('Falha ao enviar imagem')
+      }
+
+      // 2. Create Plant in DB
+      const newPlant: Omit<Planta, 'id' | 'createdAt'> = {
+        apelido: nickname || analysisResult.nome_conhecido || 'Minha Planta',
+        nome_conhecido: analysisResult.nome_conhecido || 'Desconhecida',
+        nome_cientifico: analysisResult.nome_cientifico,
+        foto_url: publicUrl,
+        status_saude: analysisResult.status_saude || 'desconhecido',
+        pontos_positivos: analysisResult.pontos_positivos || [],
+        pontos_negativos: analysisResult.pontos_negativos || [],
+        cuidados_recomendados: analysisResult.cuidados_recomendados || [],
+        vitaminas_e_adubos: analysisResult.vitaminas_e_adubos || [],
+        datas_importantes: analysisResult.datas_importantes || {},
+        logs: [],
+      }
+
+      const savedPlant = await PlantsService.createPlant(newPlant)
+
+      if (savedPlant) {
+        toast({
+          title: 'Planta salva!',
+          description: 'Sua planta foi adicionada ao jardim.',
+        })
+        navigate('/')
+      } else {
+        throw new Error('Falha ao salvar planta no banco de dados')
+      }
+    } catch (error) {
+      console.error(error)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: 'Ocorreu um erro ao salvar sua planta. Tente novamente.',
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -121,7 +147,9 @@ export default function AddPlant() {
         <div className="flex justify-center">
           <div
             className="relative w-full max-w-sm aspect-square rounded-3xl bg-secondary/30 border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:bg-secondary/50 transition-all duration-300 shadow-sm group"
-            onClick={() => !isAnalyzing && fileInputRef.current?.click()}
+            onClick={() =>
+              !isAnalyzing && !isSaving && fileInputRef.current?.click()
+            }
           >
             {imagePreview ? (
               <>
@@ -131,7 +159,7 @@ export default function AddPlant() {
                   className="w-full h-full object-cover"
                 />
                 <ScanningEffect active={isAnalyzing} />
-                {!isAnalyzing && !analysisResult && (
+                {!isAnalyzing && !analysisResult && !isSaving && (
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <p className="text-white font-medium flex items-center gap-2">
                       <Camera className="h-5 w-5" /> Alterar foto
@@ -158,7 +186,7 @@ export default function AddPlant() {
               className="hidden"
               accept="image/*"
               onChange={handleFileChange}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || isSaving}
             />
           </div>
         </div>
@@ -246,6 +274,7 @@ export default function AddPlant() {
                 variant="outline"
                 className="flex-1 h-12 rounded-xl border-brand-earth/20 text-brand-earth hover:bg-brand-light"
                 onClick={handleRetake}
+                disabled={isSaving}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Tentar outra
@@ -253,8 +282,16 @@ export default function AddPlant() {
               <Button
                 className="flex-[2] h-12 rounded-xl bg-brand-green hover:bg-brand-dark text-white shadow-lg shadow-brand-green/20"
                 onClick={handleSave}
+                disabled={isSaving}
               >
-                Adicionar ao Jardim
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Adicionar ao Jardim'
+                )}
               </Button>
             </div>
           </div>

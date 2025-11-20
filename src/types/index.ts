@@ -34,6 +34,7 @@ export interface CareLog {
 
 export interface Planta {
   id: string
+  user_id?: string
   apelido: string
   nome_conhecido: string
   nome_cientifico?: string
@@ -68,3 +69,11 @@ export interface SyncConfig {
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline'
+
+export interface UserProfile {
+  id: string
+  email: string
+  nome: string | null
+  foto_perfil_url: string | null
+  data_criacao: string
+}

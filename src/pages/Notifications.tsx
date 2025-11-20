@@ -8,7 +8,6 @@ import {
   Sprout,
   AlertTriangle,
   Leaf,
-  Bell,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -29,13 +28,13 @@ export default function Notifications() {
     loadNotifications()
   }, [])
 
-  const loadNotifications = () => {
-    const items = CareMonitorService.checkPlantStatus()
+  const loadNotifications = async () => {
+    const items = await CareMonitorService.checkPlantStatus()
     setNotifications(items)
   }
 
-  const handleComplete = (item: NotificationItem) => {
-    CareMonitorService.completeCare(item.plantId, item.type)
+  const handleComplete = async (item: NotificationItem) => {
+    await CareMonitorService.completeCare(item.plantId, item.type)
     toast({
       title: 'Cuidado registrado!',
       description: `Você cuidou de ${item.plantName}.`,
@@ -44,8 +43,8 @@ export default function Notifications() {
     loadNotifications()
   }
 
-  const handleSnooze = (item: NotificationItem) => {
-    CareMonitorService.snoozeCare(item.plantId, item.type)
+  const handleSnooze = async (item: NotificationItem) => {
+    await CareMonitorService.snoozeCare(item.plantId, item.type)
     toast({
       title: 'Lembrete adiado',
       description: 'Vamos te lembrar novamente amanhã.',

@@ -59,24 +59,18 @@
 
   .dark {
     /* Organic Dark Mode Palette */
-    /* Background: #022c22 -> HSL(166, 91%, 9%) */
     --background: 166 91% 9%;
-    /* Foreground: #f1f5f4 -> HSL(160, 10%, 95%) */
     --foreground: 160 10% 95%;
 
-    /* Card: #0f1f1c -> HSL(168, 35%, 9%) */
     --card: 168 35% 9%;
     --card-foreground: 160 10% 95%;
 
-    /* Popover: #0f1f1c */
     --popover: 168 35% 9%;
     --popover-foreground: 160 10% 95%;
 
-    /* Primary: #10b981 -> HSL(151, 84%, 40%) */
     --primary: 151 84% 40%;
     --primary-foreground: 166 91% 9%;
 
-    /* Secondary: Darker earthy tone */
     --secondary: 168 30% 15%;
     --secondary-foreground: 151 84% 40%;
 
@@ -132,6 +126,15 @@
   .animate-scan {
     animation: scan 2s linear infinite;
   }
+  .animate-sway {
+    animation: sway 3s ease-in-out infinite;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .animate-wind-particle {
+    animation: wind-particle 8s linear infinite;
+  }
 
   /* Dark mode image overlay for softness */
   .dark .image-overlay {
@@ -171,6 +174,43 @@
     }
     100% {
       top: 100%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes sway {
+    0%,
+    100% {
+      transform: rotate(-5deg);
+    }
+    50% {
+      transform: rotate(5deg);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes wind-particle {
+    0% {
+      transform: translateX(-100%) translateY(0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.5;
+    }
+    90% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateX(100vw) translateY(20px);
       opacity: 0;
     }
   }

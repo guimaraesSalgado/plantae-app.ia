@@ -1,6 +1,6 @@
-import { getPlants, updatePlantDates, addCareLog } from '@/lib/storage'
+import { PlantsService } from '@/services/plants'
 import { sendNotification } from '@/services/notifications'
-import { NotificationItem, Planta } from '@/types'
+import { NotificationItem, Planta, CareLog } from '@/types'
 import {
   addDays,
   differenceInDays,
@@ -11,8 +11,8 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 
 export const CareMonitorService = {
-  checkPlantStatus(): NotificationItem[] {
-    const plants = getPlants()
+  async checkPlantStatus(): Promise<NotificationItem[]> {
+    const plants = await PlantsService.getPlants()
     const notifications: NotificationItem[] = []
     const now = new Date()
     const today = startOfDay(now)
@@ -104,7 +104,7 @@ export const CareMonitorService = {
   },
 
   async runDailyCheck() {
-    const notifications = this.checkPlantStatus()
+    const notifications = await this.checkPlantStatus()
 
     // Send push notifications for high priority items
     notifications.forEach((item) => {
@@ -117,20 +117,25 @@ export const CareMonitorService = {
     })
   },
 
-  completeCare(plantId: string, type: NotificationItem['type']) {
-    const plant = getPlants().find((p) => p.id === plantId)
+  async completeCare(plantId: string, type: NotificationItem['type']) {
+    const plant = await PlantsService.getPlantById(plantId)
     if (!plant) return
 
-    const updates: Partial<Planta['datas_importantes']> = {}
+    const updates: Partial<Planta> = {
+      datas_importantes: { ...plant.datas_importantes },
+    }
 
     // Log completion
-    addCareLog(plantId, {
+    const newLog: CareLog = {
       id: uuidv4(),
       date: new Date().toISOString(),
       type:
         type === 'saude' || type === 'inatividade' ? 'outro' : (type as any),
       note: `Cuidado realizado via alerta: ${type}`,
-    })
+    }
+
+    const logs = plant.logs || []
+    updates.logs = [newLog, ...logs]
 
     // Recalculate dates
     if (type === 'rega') {
@@ -138,7 +143,7 @@ export const CareMonitorService = {
         (c) => c.tipo_cuidado === 'rega',
       )
       const interval = care?.intervalo_dias || 3
-      updates.proxima_rega_sugerida = addDays(
+      updates.datas_importantes!.proxima_rega_sugerida = addDays(
         new Date(),
         interval,
       ).toISOString()
@@ -147,25 +152,36 @@ export const CareMonitorService = {
         (c) => c.tipo_cuidado === 'adubacao',
       )
       const interval = care?.intervalo_dias || 30
-      updates.proxima_adubacao_sugerida = addDays(
+      updates.datas_importantes!.proxima_adubacao_sugerida = addDays(
         new Date(),
         interval,
       ).toISOString()
     }
 
     // Update plant
-    updatePlantDates(plantId, updates)
+    await PlantsService.updatePlant(plantId, updates)
   },
 
-  snoozeCare(plantId: string, type: NotificationItem['type']) {
-    const updates: Partial<Planta['datas_importantes']> = {}
+  async snoozeCare(plantId: string, type: NotificationItem['type']) {
+    const plant = await PlantsService.getPlantById(plantId)
+    if (!plant) return
 
-    if (type === 'rega') {
-      updates.proxima_rega_sugerida = addDays(new Date(), 1).toISOString()
-    } else if (type === 'adubacao') {
-      updates.proxima_adubacao_sugerida = addDays(new Date(), 1).toISOString()
+    const updates: Partial<Planta> = {
+      datas_importantes: { ...plant.datas_importantes },
     }
 
-    updatePlantDates(plantId, updates)
+    if (type === 'rega') {
+      updates.datas_importantes!.proxima_rega_sugerida = addDays(
+        new Date(),
+        1,
+      ).toISOString()
+    } else if (type === 'adubacao') {
+      updates.datas_importantes!.proxima_adubacao_sugerida = addDays(
+        new Date(),
+        1,
+      ).toISOString()
+    }
+
+    await PlantsService.updatePlant(plantId, updates)
   },
 }
