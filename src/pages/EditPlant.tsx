@@ -19,6 +19,7 @@ export default function EditPlant() {
   // Form states
   const [apelido, setApelido] = useState('')
   const [nomeConhecido, setNomeConhecido] = useState('')
+  const [nomeCientifico, setNomeCientifico] = useState('')
   const [observacoes, setObservacoes] = useState('')
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function EditPlant() {
         setPlant(foundPlant)
         setApelido(foundPlant.apelido)
         setNomeConhecido(foundPlant.nome_conhecido)
+        setNomeCientifico(foundPlant.nome_cientifico || '')
         setObservacoes(foundPlant.observacoes || '')
       } else {
         navigate('/404')
@@ -45,6 +47,7 @@ export default function EditPlant() {
         ...plant,
         apelido,
         nome_conhecido: nomeConhecido,
+        nome_cientifico: nomeCientifico,
         observacoes,
       }
 
@@ -101,7 +104,18 @@ export default function EditPlant() {
               id="nome"
               value={nomeConhecido}
               onChange={(e) => setNomeConhecido(e.target.value)}
+              placeholder="Ex: Jiboia"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cientifico">Nome Científico</Label>
+            <Input
+              id="cientifico"
+              value={nomeCientifico}
+              onChange={(e) => setNomeCientifico(e.target.value)}
               placeholder="Ex: Epipremnum aureum"
+              className="italic"
             />
           </div>
 

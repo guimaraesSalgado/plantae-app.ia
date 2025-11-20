@@ -43,6 +43,7 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CareHistory } from '@/components/CareHistory'
 import { v4 as uuidv4 } from 'uuid'
+import { ScanningEffect } from '@/components/ScanningEffect'
 
 export default function PlantDetails() {
   const { id } = useParams<{ id: string }>()
@@ -196,15 +197,25 @@ export default function PlantDetails() {
       </div>
 
       {/* Hero Section */}
-      <div className="relative rounded-3xl overflow-hidden shadow-elevation aspect-[4/3]">
+      <div className="relative rounded-3xl overflow-hidden shadow-elevation aspect-[4/3] group">
         <img
           src={plant.foto_url}
           alt={plant.apelido}
           className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 pt-20 text-white">
-          <h1 className="text-3xl font-bold">{plant.apelido}</h1>
-          <p className="text-white/90 font-medium">{plant.nome_conhecido}</p>
+        <ScanningEffect active={isRefreshing} />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-20 text-white">
+          <h1 className="text-3xl font-bold leading-tight">{plant.apelido}</h1>
+          <div className="flex flex-col">
+            <p className="text-white/90 font-medium text-lg">
+              {plant.nome_conhecido}
+            </p>
+            {plant.nome_cientifico && (
+              <p className="text-white/70 text-sm italic">
+                {plant.nome_cientifico}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

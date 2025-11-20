@@ -36,6 +36,7 @@ export interface Planta {
   id: string
   apelido: string
   nome_conhecido: string
+  nome_cientifico?: string
   foto_url: string
   status_saude: 'saudavel' | 'atencao' | 'critico' | 'desconhecido'
   pontos_positivos: string[]
