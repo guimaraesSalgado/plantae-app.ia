@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PlantCard } from '@/components/PlantCard'
-import { getPlants, deletePlant } from '@/lib/storage'
+import { getPlants, deletePlant, isOnboardingCompleted } from '@/lib/storage'
 import { Planta } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 
@@ -17,8 +17,12 @@ export default function Index() {
   }
 
   useEffect(() => {
+    if (!isOnboardingCompleted()) {
+      navigate('/onboarding')
+      return
+    }
     loadPlants()
-  }, [])
+  }, [navigate])
 
   const handlePlantClick = (id: string) => {
     navigate(`/plant/${id}`)

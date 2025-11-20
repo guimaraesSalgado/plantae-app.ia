@@ -9,8 +9,8 @@ export interface CuidadoRecomendado {
     | 'umidade'
     | 'temperatura'
     | 'outro'
-  frequencia_sugerida: string // Ex: "A cada 3 dias", "Mensalmente"
-  intervalo_dias?: number // Helper for calculation
+  frequencia_sugerida: string
+  intervalo_dias?: number
 }
 
 export interface VitaminaAdubo {
@@ -20,9 +20,16 @@ export interface VitaminaAdubo {
 }
 
 export interface DatasImportantes {
-  ultima_analise?: string // ISO Date string
-  proxima_rega_sugerida?: string // ISO Date string
-  proxima_adubacao_sugerida?: string // ISO Date string
+  ultima_analise?: string
+  proxima_rega_sugerida?: string
+  proxima_adubacao_sugerida?: string
+}
+
+export interface CareLog {
+  id: string
+  date: string
+  type: 'rega' | 'adubacao' | 'poda' | 'foto' | 'pragas' | 'outro'
+  note?: string
 }
 
 export interface Planta {
@@ -36,6 +43,8 @@ export interface Planta {
   cuidados_recomendados: CuidadoRecomendado[]
   vitaminas_e_adubos: VitaminaAdubo[]
   datas_importantes: DatasImportantes
+  logs: CareLog[]
+  observacoes?: string
   createdAt: string
 }
 

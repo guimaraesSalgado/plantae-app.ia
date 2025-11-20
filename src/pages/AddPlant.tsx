@@ -1,19 +1,12 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Camera,
-  Upload,
-  Loader2,
-  ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react'
+import { Camera, Upload, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { analyzePlantImage } from '@/lib/mock-api'
+import { identifyPlant } from '@/services/plantsAI'
 import { savePlant } from '@/lib/storage'
 import { Planta } from '@/types'
 import { v4 as uuidv4 } from 'uuid'
@@ -47,7 +40,7 @@ export default function AddPlant() {
 
     setIsAnalyzing(true)
     try {
-      const result = await analyzePlantImage(imagePreview)
+      const result = await identifyPlant(imagePreview)
       setAnalysisResult(result)
       toast({
         title: 'Análise concluída!',
@@ -78,6 +71,7 @@ export default function AddPlant() {
       cuidados_recomendados: analysisResult.cuidados_recomendados || [],
       vitaminas_e_adubos: analysisResult.vitaminas_e_adubos || [],
       datas_importantes: analysisResult.datas_importantes || {},
+      logs: [],
       createdAt: new Date().toISOString(),
     }
 

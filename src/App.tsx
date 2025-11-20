@@ -7,7 +7,9 @@ import Layout from './components/Layout'
 import Index from './pages/Index'
 import AddPlant from './pages/AddPlant'
 import PlantDetails from './pages/PlantDetails'
+import EditPlant from './pages/EditPlant'
 import Notifications from './pages/Notifications'
+import Onboarding from './pages/Onboarding'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -18,10 +20,12 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Routes>
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Index />} />
           <Route path="/add" element={<AddPlant />} />
           <Route path="/plant/:id" element={<PlantDetails />} />
+          <Route path="/plant/:id/edit" element={<EditPlant />} />
           <Route path="/notifications" element={<Notifications />} />
         </Route>
         <Route path="*" element={<NotFound />} />

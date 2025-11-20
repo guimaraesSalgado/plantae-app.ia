@@ -1,6 +1,7 @@
-import { Planta } from '@/types'
+import { Planta, CareLog } from '@/types'
 
 const STORAGE_KEY = 'guia-das-plantas-db'
+const ONBOARDING_KEY = 'guia-das-plantas-onboarding'
 
 export const getPlants = (): Planta[] => {
   try {
@@ -45,4 +46,21 @@ export const updatePlantDates = (
     plant.datas_importantes = { ...plant.datas_importantes, ...updates }
     savePlant(plant)
   }
+}
+
+export const addCareLog = (plantId: string, log: CareLog): void => {
+  const plant = getPlantById(plantId)
+  if (plant) {
+    const logs = plant.logs || []
+    plant.logs = [log, ...logs]
+    savePlant(plant)
+  }
+}
+
+export const isOnboardingCompleted = (): boolean => {
+  return localStorage.getItem(ONBOARDING_KEY) === 'true'
+}
+
+export const setOnboardingCompleted = (completed: boolean): void => {
+  localStorage.setItem(ONBOARDING_KEY, String(completed))
 }

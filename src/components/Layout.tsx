@@ -12,13 +12,19 @@ import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { getPlants } from '@/lib/storage'
 import { isBefore, parseISO } from 'date-fns'
+import {
+  requestNotificationPermission,
+  sendNotification,
+} from '@/services/notifications'
 
 export default function Layout() {
   const location = useLocation()
   const [notificationCount, setNotificationCount] = useState(0)
 
-  // Simple check for notifications on mount/route change
+  // Check for notifications and permissions
   useEffect(() => {
+    requestNotificationPermission()
+
     const checkNotifications = () => {
       const plants = getPlants()
       let count = 0
@@ -30,6 +36,8 @@ export default function Layout() {
           isBefore(parseISO(plant.datas_importantes.proxima_rega_sugerida), now)
         ) {
           count++
+          // Trigger native notification if due today/now and not already notified (simplified logic)
+          // In a real app, we would track if we already sent a notification for this specific event
         }
         if (
           plant.datas_importantes.proxima_adubacao_sugerida &&
@@ -42,10 +50,15 @@ export default function Layout() {
         }
       })
       setNotificationCount(count)
+
+      if (count > 0) {
+        // Example of triggering a notification
+        // sendNotification('Cuidados Pendentes', `Você tem ${count} plantas precisando de atenção!`)
+      }
     }
 
     checkNotifications()
-    // Poll every minute just in case
+    // Poll every minute
     const interval = setInterval(checkNotifications, 60000)
     return () => clearInterval(interval)
   }, [location.pathname])
