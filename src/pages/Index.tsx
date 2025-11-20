@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { CareMonitorService } from '@/services/careMonitor'
 import { cn } from '@/lib/utils'
 
 const ITEMS_PER_PAGE = 10
@@ -33,7 +32,7 @@ export default function Index() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  const loadPlants = async () => {
+  const loadPlants = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await PlantsService.getPlants()
@@ -48,12 +47,12 @@ export default function Index() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
 
   useEffect(() => {
     setViewMode(getViewPreference())
     loadPlants()
-  }, [navigate])
+  }, [navigate, loadPlants])
 
   const handlePlantClick = (id: string) => {
     navigate(`/plant/${id}`)
@@ -120,9 +119,6 @@ export default function Index() {
 
   // Attention Plants Logic
   const attentionPlants = useMemo(() => {
-    // Note: CareMonitorService currently uses local storage.
-    // Ideally, it should be updated to use PlantsService or pass plants as arg.
-    // For now, we filter based on status directly from fetched plants.
     return plants.filter(
       (p) => p.status_saude === 'critico' || p.status_saude === 'atencao',
     )
