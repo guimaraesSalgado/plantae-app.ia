@@ -6,6 +6,11 @@ import { PlantCard } from '@/components/PlantCard'
 import { getPlants, deletePlant, isOnboardingCompleted } from '@/lib/storage'
 import { Planta } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export default function Index() {
   const [plants, setPlants] = useState<Planta[]>([])
@@ -80,19 +85,24 @@ export default function Index() {
         </div>
       )}
 
-      {/* Floating Action Button for mobile, or regular button for desktop if list is not empty */}
-      {plants.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <Button
-            onClick={() => navigate('/add')}
-            size="icon"
-            className="h-14 w-14 rounded-full shadow-elevation bg-primary hover:bg-primary/90 text-white"
-          >
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Adicionar planta</span>
-          </Button>
-        </div>
-      )}
+      {/* Floating Action Button - Always visible */}
+      <div className="fixed bottom-6 right-6 z-40 animate-fade-in">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => navigate('/add')}
+              size="icon"
+              className="h-14 w-14 rounded-full shadow-fab bg-primary hover:bg-primary/90 text-white transition-transform hover:scale-105 active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+              <span className="sr-only">Adicionar planta</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Adicionar nova planta</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   )
 }

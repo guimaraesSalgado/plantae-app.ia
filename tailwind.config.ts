@@ -102,6 +102,7 @@ export default {
         subtle:
           '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
         elevation: '0 4px 20px rgba(0, 0, 0, 0.05)',
+        fab: '0 4px 12px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1)',
       },
       transitionTimingFunction: {
         apple: 'cubic-bezier(0.42, 0, 0.58, 1)',
