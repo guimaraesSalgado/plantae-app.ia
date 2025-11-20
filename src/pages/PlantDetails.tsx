@@ -437,7 +437,15 @@ export default function PlantDetails() {
               </DialogContent>
             </Dialog>
           </div>
-          <CareHistory logs={plant.logs || []} />
+
+          {/* History Container with fixed height and gradient overlay */}
+          <div className="relative rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="h-[400px] overflow-y-auto p-4 pb-12 scroll-smooth">
+              <CareHistory logs={plant.logs || []} />
+            </div>
+            {/* Gradient Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

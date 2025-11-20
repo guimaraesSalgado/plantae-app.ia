@@ -55,11 +55,11 @@ export function PlantCard({
     }
   }
 
-  // Carousel Variant
+  // Carousel Variant - Organic Material Design
   if (variant === 'carousel') {
     return (
       <Card
-        className="overflow-hidden cursor-pointer group relative border-none shadow-md bg-[#f5f5f4] hover:shadow-lg transition-all duration-300 w-[280px] h-[160px] rounded-2xl flex-shrink-0 mx-2"
+        className="overflow-hidden cursor-pointer group relative border-none shadow-md hover:shadow-lg transition-all duration-300 w-[280px] h-[140px] rounded-2xl flex-shrink-0 mx-2 bg-brand-light"
         onClick={() => onClick(plant.id)}
       >
         <CardContent className="p-0 h-full flex">
@@ -69,7 +69,7 @@ export function PlantCard({
               alt={plant.apelido}
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent" />
           </div>
           <div className="w-2/3 p-4 flex flex-col justify-center relative">
             <div
@@ -90,7 +90,7 @@ export function PlantCard({
             <div className="mt-auto">
               <span
                 className={cn(
-                  'text-xs font-medium px-2 py-1 rounded-full bg-white/80 text-stone-700 border border-stone-200',
+                  'text-[10px] font-medium px-2 py-1 rounded-full bg-white/80 text-stone-700 border border-stone-200 uppercase tracking-wide',
                 )}
               >
                 {statusLabels[plant.status_saude]}
@@ -102,19 +102,19 @@ export function PlantCard({
     )
   }
 
-  // List Variant
+  // List Variant - Minimalist
   if (variant === 'list') {
     return (
       <Card
-        className="overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group relative border border-border/50 shadow-sm rounded-xl mb-3"
+        className="overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group relative border border-border/50 shadow-sm rounded-xl mb-3 bg-white"
         onClick={() => onClick(plant.id)}
       >
         <CardContent className="p-3 flex items-center gap-4">
-          <div className="relative h-12 w-12 flex-shrink-0">
+          <div className="relative h-14 w-14 flex-shrink-0">
             <img
               src={plant.foto_url}
               alt={plant.apelido}
-              className="h-full w-full object-cover rounded-full border border-border"
+              className="h-full w-full object-cover rounded-lg border border-border"
             />
             <div
               className={cn(
@@ -187,13 +187,13 @@ export function PlantCard({
     )
   }
 
-  // Grid Variant (Default)
+  // Grid Variant (Default) - 4:3 Aspect Ratio
   return (
     <Card
-      className="overflow-hidden hover:shadow-elevation transition-all duration-300 cursor-pointer group relative border-none shadow-subtle rounded-2xl h-full flex flex-col"
+      className="overflow-hidden hover:shadow-elevation transition-all duration-300 cursor-pointer group relative border-none shadow-subtle rounded-2xl h-full flex flex-col bg-white"
       onClick={() => onClick(plant.id)}
     >
-      <div className="relative aspect-square w-full overflow-hidden">
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
         <img
           src={plant.foto_url}
           alt={plant.apelido}

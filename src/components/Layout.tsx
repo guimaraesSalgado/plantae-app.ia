@@ -1,5 +1,5 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Menu, Leaf, Home, PlusCircle, Cloud } from 'lucide-react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, Leaf, Home, PlusCircle, Cloud } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -8,7 +8,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { requestNotificationPermission } from '@/services/notifications'
 import { CareMonitorService } from '@/services/careMonitor'
@@ -19,7 +18,6 @@ import { cn } from '@/lib/utils'
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [notificationCount, setNotificationCount] = useState(0)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   // Check for notifications and permissions
@@ -27,9 +25,8 @@ export default function Layout() {
     requestNotificationPermission()
 
     const checkStatus = async () => {
-      // Run Care Monitor
-      const notifications = CareMonitorService.checkPlantStatus()
-      setNotificationCount(notifications.length)
+      // Run Care Monitor (background check only)
+      CareMonitorService.checkPlantStatus()
 
       // Run Auto Sync if enabled
       const syncConfig = getSyncConfig()
@@ -47,7 +44,7 @@ export default function Layout() {
   const navItems = [
     { path: '/', label: 'Início', icon: Home },
     { path: '/add', label: 'Adicionar Planta', icon: PlusCircle },
-    { path: '/notifications', label: 'Alertas e Cuidados', icon: Bell },
+    // Notifications item removed as per user story
     { path: '/sync-backup', label: 'Sincronização e Backup', icon: Cloud },
   ]
 
@@ -59,7 +56,6 @@ export default function Layout() {
 
     setIsSheetOpen(false)
     // Wait for sheet close animation (approx 300ms) before navigating
-    // This ensures smooth transition and prevents visual glitches
     setTimeout(() => {
       navigate(path)
     }, 300)
@@ -129,24 +125,8 @@ export default function Layout() {
           Guia das Plantas
         </div>
 
-        <Link to="/notifications" className="relative group">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-foreground hover:bg-brand-light/50 transition-colors"
-          >
-            <Bell className="h-6 w-6 group-hover:text-brand-green transition-colors" />
-            <span className="sr-only">Notificações</span>
-          </Button>
-          {notificationCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute top-1 right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] rounded-full animate-pulse"
-            >
-              {notificationCount}
-            </Badge>
-          )}
-        </Link>
+        {/* Bell icon removed as per user story */}
+        <div className="w-10" />
       </header>
 
       {/* Main Content Area */}

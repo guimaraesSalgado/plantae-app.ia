@@ -1,13 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Plus,
-  Search,
-  LayoutGrid,
-  List as ListIcon,
-  Loader2,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Search, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PlantCard } from '@/components/PlantCard'
 import { AttentionCarousel } from '@/components/AttentionCarousel'
@@ -21,11 +14,6 @@ import {
 } from '@/lib/storage'
 import { Planta } from '@/types'
 import { useToast } from '@/hooks/use-toast'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Pagination,
@@ -158,60 +146,62 @@ export default function Index() {
         />
       )}
 
-      {/* Controls Section */}
-      <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300">
-        {/* Search and View Toggle */}
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar planta..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
-            />
+      {/* Controls Section - Only show if there are plants */}
+      {plants.length > 0 && (
+        <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300 animate-fade-in">
+          {/* Search and View Toggle */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar planta..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
+              />
+            </div>
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={handleViewModeChange}
+              className="bg-secondary/30 p-1 rounded-xl border border-transparent"
+            >
+              <ToggleGroupItem
+                value="grid"
+                aria-label="Grid view"
+                className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="list"
+                aria-label="List view"
+                className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
+              >
+                <ListIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          <ToggleGroup
-            type="single"
-            value={viewMode}
-            onValueChange={handleViewModeChange}
-            className="bg-secondary/30 p-1 rounded-xl border border-transparent"
-          >
-            <ToggleGroupItem
-              value="grid"
-              aria-label="Grid view"
-              className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="list"
-              aria-label="List view"
-              className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
-            >
-              <ListIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
 
-        {/* Filter Tags */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {filterTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setStatusFilter(tag)}
-              className={cn(
-                'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border',
-                statusFilter === tag
-                  ? 'bg-[#065f46] text-white border-[#065f46] shadow-md'
-                  : 'bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
-              )}
-            >
-              {tag}
-            </button>
-          ))}
+          {/* Filter Tags */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {filterTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setStatusFilter(tag)}
+                className={cn(
+                  'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border',
+                  statusFilter === tag
+                    ? 'bg-[#065f46] text-white border-[#065f46] shadow-md'
+                    : 'bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <div className="min-h-[300px]">
@@ -219,7 +209,8 @@ export default function Index() {
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filteredPlants.length === 0 ? (
+        ) : plants.length === 0 ? (
+          // Empty State - No plants at all
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
             <div className="bg-secondary/50 p-6 rounded-full">
               <img
@@ -229,21 +220,24 @@ export default function Index() {
               />
             </div>
             <h2 className="text-xl font-semibold text-foreground">
+              Nenhuma planta cadastrada
+            </h2>
+            <p className="text-muted-foreground max-w-xs">
+              Adicione sua primeira planta através do menu lateral.
+            </p>
+          </div>
+        ) : filteredPlants.length === 0 ? (
+          // Empty State - No results for filter
+          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
+            <div className="bg-secondary/50 p-6 rounded-full">
+              <Search className="w-12 h-12 text-muted-foreground opacity-50" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground">
               Nenhuma planta encontrada
             </h2>
             <p className="text-muted-foreground max-w-xs">
-              {searchQuery || statusFilter !== 'Todas'
-                ? 'Tente ajustar seus filtros de busca.'
-                : 'Você ainda não tem plantas cadastradas.'}
+              Tente ajustar seus filtros de busca.
             </p>
-            {!searchQuery && statusFilter === 'Todas' && (
-              <Button
-                onClick={() => navigate('/add')}
-                className="mt-4 bg-primary hover:bg-primary/90 text-white rounded-full px-8"
-              >
-                Adicionar planta
-              </Button>
-            )}
           </div>
         ) : (
           <div className="space-y-6 animate-slide-up">
@@ -308,25 +302,6 @@ export default function Index() {
             )}
           </div>
         )}
-      </div>
-
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-40 animate-fade-in">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={() => navigate('/add')}
-              size="icon"
-              className="h-14 w-14 rounded-full shadow-fab bg-primary hover:bg-primary/90 text-white transition-transform hover:scale-105 active:scale-95"
-            >
-              <Plus className="h-6 w-6" />
-              <span className="sr-only">Adicionar planta</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Adicionar nova planta</p>
-          </TooltipContent>
-        </Tooltip>
       </div>
     </div>
   )
