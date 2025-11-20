@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Leaf, Home, PlusCircle, Cloud } from 'lucide-react'
+import { Menu, Leaf, Home, PlusCircle, Cloud, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -14,11 +14,14 @@ import { CareMonitorService } from '@/services/careMonitor'
 import { CloudSyncService } from '@/services/cloudSync'
 import { getSyncConfig } from '@/lib/storage'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/lib/theme'
+import { Switch } from '@/components/ui/switch'
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   // Check for notifications and permissions
   useEffect(() => {
@@ -38,13 +41,25 @@ export default function Layout() {
     checkStatus()
     // Poll every minute
     const interval = setInterval(checkStatus, 60000)
-    return () => clearInterval(interval)
+
+    // Reconnection listener for iOS robustness
+    const handleOnline = () => {
+      const syncConfig = getSyncConfig()
+      if (syncConfig.enabled && syncConfig.autoSync) {
+        CloudSyncService.syncData()
+      }
+    }
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('online', handleOnline)
+    }
   }, [location.pathname])
 
   const navItems = [
     { path: '/', label: 'Início', icon: Home },
     { path: '/add', label: 'Adicionar Planta', icon: PlusCircle },
-    // Notifications item removed as per user story
     { path: '/sync-backup', label: 'Sincronização e Backup', icon: Cloud },
   ]
 
@@ -61,17 +76,21 @@ export default function Layout() {
     }, 300)
   }
 
+  const toggleTheme = (checked: boolean) => {
+    setTheme(checked ? 'dark' : 'light')
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background transition-colors duration-300">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 shadow-sm transition-all duration-300">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 shadow-sm transition-all duration-300">
         <div className="flex items-center gap-2">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-foreground hover:bg-brand-light/50 transition-colors"
+                className="text-foreground hover:bg-secondary transition-colors"
               >
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Menu</span>
@@ -79,10 +98,10 @@ export default function Layout() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[300px] sm:w-[350px] border-r-brand-light"
+              className="w-[300px] sm:w-[350px] border-r-border bg-card"
             >
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-brand-green text-xl font-display">
+                <SheetTitle className="flex items-center gap-2 text-primary text-xl font-display">
                   <Leaf className="h-6 w-6" />
                   Guia das Plantas
                 </SheetTitle>
@@ -96,11 +115,11 @@ export default function Layout() {
                       onClick={() => handleNavigation(item.path)}
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 text-base font-medium rounded-xl transition-all duration-200 w-full text-left group',
-                        'hover:bg-brand-light/80 active:scale-95 active:opacity-80', // Microinteractions
+                        'hover:bg-secondary active:scale-95 active:opacity-80', // Microinteractions
                         'animate-drawer-item', // Fade-in animation
                         isActive
-                          ? 'bg-brand-light text-brand-dark shadow-sm' // Active styles
-                          : 'text-foreground/80 hover:text-brand-dark bg-transparent',
+                          ? 'bg-secondary text-primary shadow-sm' // Active styles
+                          : 'text-foreground/80 hover:text-primary bg-transparent',
                       )}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
@@ -108,24 +127,42 @@ export default function Layout() {
                         className={cn(
                           'h-5 w-5 transition-colors duration-200',
                           isActive
-                            ? 'text-brand-green'
-                            : 'text-muted-foreground group-hover:text-brand-green',
+                            ? 'text-primary'
+                            : 'text-muted-foreground group-hover:text-primary',
                         )}
                       />
                       {item.label}
                     </button>
                   )
                 })}
+
+                {/* Theme Toggle in Menu */}
+                <div
+                  className="mt-4 px-4 py-3 flex items-center justify-between border-t border-border animate-drawer-item"
+                  style={{ animationDelay: '200ms' }}
+                >
+                  <div className="flex items-center gap-3 text-foreground/80">
+                    {theme === 'dark' ? (
+                      <Moon className="h-5 w-5" />
+                    ) : (
+                      <Sun className="h-5 w-5" />
+                    )}
+                    <span className="font-medium">Modo Escuro</span>
+                  </div>
+                  <Switch
+                    checked={theme === 'dark'}
+                    onCheckedChange={toggleTheme}
+                  />
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
         </div>
 
-        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-brand-green tracking-tight">
+        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-primary tracking-tight">
           Guia das Plantas
         </div>
 
-        {/* Bell icon removed as per user story */}
         <div className="w-10" />
       </header>
 

@@ -169,14 +169,14 @@ export default function Index() {
               <ToggleGroupItem
                 value="grid"
                 aria-label="Grid view"
-                className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
+                className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
               >
                 <LayoutGrid className="h-4 w-4" />
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="list"
                 aria-label="List view"
-                className="rounded-lg data-[state=on]:bg-white data-[state=on]:shadow-sm"
+                className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
               >
                 <ListIcon className="h-4 w-4" />
               </ToggleGroupItem>
@@ -192,8 +192,8 @@ export default function Index() {
                 className={cn(
                   'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border',
                   statusFilter === tag
-                    ? 'bg-[#065f46] text-white border-[#065f46] shadow-md'
-                    : 'bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
+                    ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                    : 'bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
                 )}
               >
                 {tag}

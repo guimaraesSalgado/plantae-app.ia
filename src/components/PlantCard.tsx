@@ -59,11 +59,11 @@ export function PlantCard({
   if (variant === 'carousel') {
     return (
       <Card
-        className="overflow-hidden cursor-pointer group relative border-none shadow-md hover:shadow-lg transition-all duration-300 w-[280px] h-[140px] rounded-2xl flex-shrink-0 mx-2 bg-brand-light"
+        className="overflow-hidden cursor-pointer group relative border-none shadow-md hover:shadow-lg transition-all duration-300 w-[280px] h-[140px] rounded-2xl flex-shrink-0 mx-2 bg-card active:scale-95"
         onClick={() => onClick(plant.id)}
       >
         <CardContent className="p-0 h-full flex">
-          <div className="w-1/3 h-full relative">
+          <div className="w-1/3 h-full relative image-overlay">
             <img
               src={plant.foto_url}
               alt={plant.apelido}
@@ -81,16 +81,16 @@ export function PlantCard({
             >
               {getStatusIcon(plant.status_saude)}
             </div>
-            <h3 className="font-bold text-lg text-stone-800 truncate pr-6">
+            <h3 className="font-bold text-lg text-foreground truncate pr-6">
               {plant.apelido}
             </h3>
-            <p className="text-xs text-stone-500 truncate mb-2">
+            <p className="text-xs text-muted-foreground truncate mb-2">
               {plant.nome_conhecido}
             </p>
             <div className="mt-auto">
               <span
                 className={cn(
-                  'text-[10px] font-medium px-2 py-1 rounded-full bg-white/80 text-stone-700 border border-stone-200 uppercase tracking-wide',
+                  'text-[10px] font-medium px-2 py-1 rounded-full bg-secondary text-foreground border border-border uppercase tracking-wide',
                 )}
               >
                 {statusLabels[plant.status_saude]}
@@ -106,11 +106,11 @@ export function PlantCard({
   if (variant === 'list') {
     return (
       <Card
-        className="overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group relative border border-border/50 shadow-sm rounded-xl mb-3 bg-white"
+        className="overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group relative border border-border shadow-sm rounded-xl mb-3 bg-card active:scale-95"
         onClick={() => onClick(plant.id)}
       >
         <CardContent className="p-3 flex items-center gap-4">
-          <div className="relative h-14 w-14 flex-shrink-0">
+          <div className="relative h-14 w-14 flex-shrink-0 image-overlay">
             <img
               src={plant.foto_url}
               alt={plant.apelido}
@@ -118,7 +118,7 @@ export function PlantCard({
             />
             <div
               className={cn(
-                'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white',
+                'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card',
                 statusColors[plant.status_saude],
               )}
             />
@@ -138,12 +138,12 @@ export function PlantCard({
               className={cn(
                 'text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline-block',
                 plant.status_saude === 'saudavel'
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : plant.status_saude === 'atencao'
-                    ? 'bg-yellow-100 text-yellow-700'
+                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                     : plant.status_saude === 'critico'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-100 text-gray-700',
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
               )}
             >
               {statusLabels[plant.status_saude]}
@@ -190,10 +190,10 @@ export function PlantCard({
   // Grid Variant (Default) - 4:3 Aspect Ratio
   return (
     <Card
-      className="overflow-hidden hover:shadow-elevation transition-all duration-300 cursor-pointer group relative border-none shadow-subtle rounded-2xl h-full flex flex-col bg-white"
+      className="overflow-hidden hover:shadow-elevation transition-all duration-300 cursor-pointer group relative border-none shadow-subtle rounded-2xl h-full flex flex-col bg-card active:scale-95"
       onClick={() => onClick(plant.id)}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
+      <div className="relative aspect-[4/3] w-full overflow-hidden image-overlay">
         <img
           src={plant.foto_url}
           alt={plant.apelido}

@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    /* Nature-inspired palette */
+    /* Nature-inspired palette - Light Mode */
     --background: 0 0% 98%; /* Soft white/gray */
     --foreground: 150 5% 15%; /* Dark gray/greenish */
 
@@ -49,42 +49,58 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Chart colors for potential future use */
+    /* Chart colors */
     --chart-1: 142 76% 36%;
     --chart-2: 160 84% 39%;
     --chart-3: 142 70% 50%;
-    --chart-4: 45 90% 55%; /* Warning/Sun */
-    --chart-5: 0 84% 60%; /* Danger */
+    --chart-4: 45 90% 55%;
+    --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 150 5% 10%;
-    --foreground: 140 10% 90%;
+    /* Organic Dark Mode Palette */
+    /* Background: #022c22 -> HSL(166, 91%, 9%) */
+    --background: 166 91% 9%;
+    /* Foreground: #f1f5f4 -> HSL(160, 10%, 95%) */
+    --foreground: 160 10% 95%;
 
-    --card: 150 5% 12%;
-    --card-foreground: 140 10% 90%;
+    /* Card: #0f1f1c -> HSL(168, 35%, 9%) */
+    --card: 168 35% 9%;
+    --card-foreground: 160 10% 95%;
 
-    --popover: 150 5% 12%;
-    --popover-foreground: 140 10% 90%;
+    /* Popover: #0f1f1c */
+    --popover: 168 35% 9%;
+    --popover-foreground: 160 10% 95%;
 
-    --primary: 142 70% 45%;
-    --primary-foreground: 150 5% 10%;
+    /* Primary: #10b981 -> HSL(151, 84%, 40%) */
+    --primary: 151 84% 40%;
+    --primary-foreground: 166 91% 9%;
 
-    --secondary: 150 5% 15%;
-    --secondary-foreground: 140 10% 90%;
+    /* Secondary: Darker earthy tone */
+    --secondary: 168 30% 15%;
+    --secondary-foreground: 151 84% 40%;
 
-    --muted: 150 5% 15%;
-    --muted-foreground: 140 10% 60%;
+    --muted: 168 30% 15%;
+    --muted-foreground: 160 10% 60%;
 
-    --accent: 150 5% 15%;
-    --accent-foreground: 140 10% 90%;
+    --accent: 168 30% 15%;
+    --accent-foreground: 151 84% 40%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 140 10% 90%;
+    --destructive-foreground: 160 10% 95%;
 
-    --border: 150 5% 20%;
-    --input: 150 5% 20%;
-    --ring: 142 70% 45%;
+    --border: 168 30% 15%;
+    --input: 168 30% 15%;
+    --ring: 151 84% 40%;
+
+    --sidebar-background: 166 91% 9%;
+    --sidebar-foreground: 160 10% 95%;
+    --sidebar-primary: 151 84% 40%;
+    --sidebar-primary-foreground: 166 91% 9%;
+    --sidebar-accent: 168 30% 15%;
+    --sidebar-accent-foreground: 160 10% 95%;
+    --sidebar-border: 168 30% 15%;
+    --sidebar-ring: 151 84% 40%;
   }
 }
 
@@ -93,19 +109,24 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300 ease-in-out;
   }
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fade-in 0.5s ease-out;
+    animation: fade-in 0.5s cubic-bezier(0, 0, 0.2, 1);
   }
   .animate-slide-up {
-    animation: slide-up 0.4s ease-out;
+    animation: slide-up 0.4s cubic-bezier(0, 0, 0.2, 1);
   }
   .animate-scan {
     animation: scan 2s linear infinite;
+  }
+
+  /* Dark mode image overlay for softness */
+  .dark .image-overlay {
+    @apply relative after:absolute after:inset-0 after:bg-black/20 after:content-[''];
   }
 
   @keyframes fade-in {

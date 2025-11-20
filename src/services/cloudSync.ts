@@ -12,17 +12,29 @@ const CLOUD_STORAGE_KEY = 'guia-das-plantas-cloud-mock'
 // Simulate network delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Chunk size for uploads (simulated)
+const CHUNK_SIZE = 50 * 1024 // 50KB chunks
+
 export const CloudSyncService = {
   async uploadData(): Promise<void> {
     if (!navigator.onLine) {
       throw new Error('Sem conexão com a internet')
     }
 
-    await delay(1500) // Simulate upload time
-
     const localPlants = getPlants()
-    // In a real app, we would encrypt here
-    localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(localPlants))
+    const json = JSON.stringify(localPlants)
+
+    // Simulate Chunked Upload
+    const totalChunks = Math.ceil(json.length / CHUNK_SIZE)
+
+    for (let i = 0; i < totalChunks; i++) {
+      // Simulate uploading chunk i
+      await delay(300) // 300ms per chunk
+      // In a real app, we would send slice: json.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+    }
+
+    // Finalize upload
+    localStorage.setItem(CLOUD_STORAGE_KEY, json)
 
     const config = getSyncConfig()
     saveSyncConfig({ ...config, lastSync: new Date().toISOString() })
@@ -33,7 +45,7 @@ export const CloudSyncService = {
       throw new Error('Sem conexão com a internet')
     }
 
-    await delay(1500) // Simulate download time
+    await delay(1000) // Simulate download time
 
     const cloudData = localStorage.getItem(CLOUD_STORAGE_KEY)
     if (!cloudData) return []
@@ -81,11 +93,9 @@ export const CloudSyncService = {
 
       // 3. Save merged data to both Local and Cloud
       savePlantsBulk(mergedPlants)
-      localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(mergedPlants))
 
-      // 4. Update Config
-      const config = getSyncConfig()
-      saveSyncConfig({ ...config, lastSync: new Date().toISOString() })
+      // Upload merged data back to cloud (chunked)
+      await this.uploadData()
 
       return 'success'
     } catch (error) {

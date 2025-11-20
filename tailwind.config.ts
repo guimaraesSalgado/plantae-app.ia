@@ -106,7 +106,9 @@ export default {
       },
       transitionTimingFunction: {
         apple: 'cubic-bezier(0.42, 0, 0.58, 1)',
-        organic: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+        organic: 'cubic-bezier(0.4, 0.0, 0.2, 1)', // Standard easing
+        decelerate: 'cubic-bezier(0.0, 0.0, 0.2, 1)', // Entry
+        accelerate: 'cubic-bezier(0.4, 0.0, 1, 1)', // Exit
       },
       keyframes: {
         'page-enter': {
@@ -117,10 +119,16 @@ export default {
           '0%': { opacity: '0', transform: 'translateX(-10px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'scale-down': {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(0.97)' },
+        },
       },
       animation: {
-        'page-enter': 'page-enter 0.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards',
-        'drawer-item': 'drawer-item-enter 0.3s ease-out forwards',
+        'page-enter': 'page-enter 0.2s cubic-bezier(0.0, 0.0, 0.2, 1) forwards',
+        'drawer-item':
+          'drawer-item-enter 0.3s cubic-bezier(0.0, 0.0, 0.2, 1) forwards',
+        'scale-press': 'scale-down 0.1s ease-out forwards',
       },
     },
   },
