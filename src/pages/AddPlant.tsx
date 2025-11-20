@@ -113,7 +113,7 @@ export default function AddPlant() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold text-brand-dark">Nova Planta</h1>
+        <h1 className="feature-title mb-0">Nova Planta</h1>
       </div>
 
       <div className="space-y-6">

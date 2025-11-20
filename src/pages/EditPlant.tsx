@@ -73,7 +73,7 @@ export default function EditPlant() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold">Editar Planta</h1>
+        <h1 className="feature-title mb-0">Editar Planta</h1>
       </div>
 
       <div className="space-y-6">

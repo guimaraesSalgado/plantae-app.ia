@@ -113,6 +113,15 @@
   }
 }
 
+@layer components {
+  .feature-title {
+    @apply text-2xl md:text-3xl font-display font-bold text-brand-dark dark:text-foreground tracking-tight mb-2;
+  }
+  .section-title {
+    @apply text-lg md:text-xl font-display font-bold text-brand-dark dark:text-foreground/90 tracking-tight mb-3 flex items-center gap-2;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fade-in 0.5s cubic-bezier(0, 0, 0.2, 1);

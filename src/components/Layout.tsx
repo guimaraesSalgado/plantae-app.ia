@@ -101,9 +101,9 @@ export default function Layout() {
               className="w-[300px] sm:w-[350px] border-r-border bg-card"
             >
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-primary text-xl font-display">
-                  <Leaf className="h-6 w-6" />
-                  Guia das Plantas
+                <SheetTitle className="flex items-center gap-2 text-brand-dark dark:text-foreground text-xl font-display font-bold">
+                  <Leaf className="h-6 w-6 text-primary" />
+                  plantae
                 </SheetTitle>
               </SheetHeader>
               <nav className="mt-8 flex flex-col gap-2">
@@ -159,8 +159,8 @@ export default function Layout() {
           </Sheet>
         </div>
 
-        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-primary tracking-tight">
-          Guia das Plantas
+        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-brand-dark dark:text-foreground tracking-tight">
+          plantae
         </div>
 
         <div className="w-10" />

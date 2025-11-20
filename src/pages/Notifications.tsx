@@ -91,9 +91,7 @@ export default function Notifications() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold text-brand-dark">
-          Alertas e Cuidados
-        </h1>
+        <h1 className="feature-title mb-0">Alertas e Cuidados</h1>
       </div>
 
       {notifications.length === 0 ? (

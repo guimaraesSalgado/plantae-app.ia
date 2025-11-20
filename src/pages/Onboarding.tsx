@@ -10,7 +10,7 @@ export default function Onboarding() {
 
   const steps = [
     {
-      title: 'Bem-vindo ao Guia das Plantas',
+      title: 'Bem-vindo ao plantae',
       description:
         'Seu assistente pessoal para cuidar do seu jardim com inteligência e carinho.',
       icon: <Leaf className="w-16 h-16 text-primary" />,
@@ -51,7 +51,7 @@ export default function Onboarding() {
         </div>
 
         <div className="space-y-4 max-w-xs mx-auto">
-          <h1 className="text-2xl font-bold text-foreground transition-all duration-300">
+          <h1 className="feature-title transition-all duration-300">
             {steps[step].title}
           </h1>
           <p className="text-muted-foreground transition-all duration-300">

@@ -169,9 +169,7 @@ export default function SyncBackup() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold text-foreground">
-          Sincronização e Backup
-        </h1>
+        <h1 className="feature-title mb-0">Sincronização e Backup</h1>
       </div>
 
       {/* Status Card */}
@@ -242,9 +240,7 @@ export default function SyncBackup() {
       <div className="space-y-4">
         <Card className="border-border shadow-subtle bg-card">
           <CardHeader>
-            <CardTitle className="text-lg text-foreground">
-              Configurações
-            </CardTitle>
+            <CardTitle className="section-title mb-0">Configurações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">

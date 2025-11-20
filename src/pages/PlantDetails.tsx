@@ -251,7 +251,7 @@ export default function PlantDetails() {
           {plant.observacoes && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-muted-foreground">
+                <CardTitle className="section-title mb-0">
                   Observações
                 </CardTitle>
               </CardHeader>
@@ -265,7 +265,7 @@ export default function PlantDetails() {
           {plant.pontos_negativos.length > 0 && (
             <Card className="border-l-4 border-l-yellow-500">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-yellow-700">
+                <CardTitle className="section-title mb-0 text-yellow-700 dark:text-yellow-500">
                   <AlertTriangle className="h-5 w-5" />
                   Pontos de Atenção
                 </CardTitle>
@@ -290,7 +290,7 @@ export default function PlantDetails() {
           {plant.pontos_positivos.length > 0 && (
             <Card className="border-l-4 border-l-green-500">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-green-700">
+                <CardTitle className="section-title mb-0 text-green-700 dark:text-green-500">
                   <CheckCircle className="h-5 w-5" />
                   Sinais de Saúde
                 </CardTitle>
@@ -314,7 +314,7 @@ export default function PlantDetails() {
           {/* Care Recommendations */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="section-title mb-0">
                 <Calendar className="h-5 w-5 text-primary" />
                 Cuidados Recomendados
               </CardTitle>
@@ -360,7 +360,7 @@ export default function PlantDetails() {
           {plant.vitaminas_e_adubos.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="section-title mb-0">
                   <Sprout className="h-5 w-5 text-primary" />
                   Nutrição e Ambiente
                 </CardTitle>
@@ -389,7 +389,7 @@ export default function PlantDetails() {
 
         <TabsContent value="history" className="space-y-4 animate-fade-in">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+            <h3 className="section-title mb-0">
               <History className="h-5 w-5 text-primary" />
               Linha do Tempo
             </h3>

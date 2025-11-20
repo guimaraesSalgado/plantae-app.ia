@@ -79,7 +79,7 @@ export default {
           green: '#10b981', // Main green
           dark: '#065f46', // Dark green
           earth: '#78716c', // Earthy tone (stone-500)
-          light: '#f5f5f4', // Light earthy (stone-100)
+          light: '#f1f5f4', // Soft white (updated from user story)
         },
         chart: {
           1: 'hsl(var(--chart-1))',

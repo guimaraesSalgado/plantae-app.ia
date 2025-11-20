@@ -130,9 +130,7 @@ export default function Index() {
     <div className="space-y-8 pb-24">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
-          Meu Jardim
-        </h1>
+        <h1 className="feature-title">Meu Jardim</h1>
         <p className="text-muted-foreground">
           Gerencie e cuide das suas plantas com carinho.
         </p>

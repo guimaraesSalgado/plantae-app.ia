@@ -24,9 +24,7 @@ export function AttentionCarousel({
     <div className="w-full space-y-3 animate-fade-in">
       <div className="flex items-center gap-2 px-1">
         <AlertTriangle className="h-5 w-5 text-yellow-600" />
-        <h2 className="text-lg font-bold text-foreground">
-          Precisam de Atenção
-        </h2>
+        <h2 className="section-title mb-0">Precisam de Atenção</h2>
       </div>
       <Carousel
         opts={{
