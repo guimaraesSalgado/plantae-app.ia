@@ -3,6 +3,7 @@ import { Planta, CareLog, SyncConfig } from '@/types'
 const STORAGE_KEY = 'guia-das-plantas-db'
 const ONBOARDING_KEY = 'guia-das-plantas-onboarding'
 const SYNC_CONFIG_KEY = 'guia-das-plantas-sync-config'
+const VIEW_PREF_KEY = 'guia-das-plantas-view-pref'
 
 export const getPlants = (): Planta[] => {
   try {
@@ -87,4 +88,15 @@ export const getSyncConfig = (): SyncConfig => {
 
 export const saveSyncConfig = (config: SyncConfig): void => {
   localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(config))
+}
+
+// View Preference
+export type ViewMode = 'grid' | 'list'
+
+export const getViewPreference = (): ViewMode => {
+  return (localStorage.getItem(VIEW_PREF_KEY) as ViewMode) || 'grid'
+}
+
+export const saveViewPreference = (mode: ViewMode): void => {
+  localStorage.setItem(VIEW_PREF_KEY, mode)
 }
