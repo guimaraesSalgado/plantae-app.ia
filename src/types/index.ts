@@ -46,14 +46,24 @@ export interface Planta {
   logs: CareLog[]
   observacoes?: string
   createdAt: string
+  updatedAt?: string
 }
 
 export interface NotificationItem {
   id: string
   plantId: string
   plantName: string
-  type: 'rega' | 'adubacao' | 'outro'
+  type: 'rega' | 'adubacao' | 'saude' | 'inatividade' | 'outro'
   description: string
   dueDate: Date
   isOverdue: boolean
+  priority: 'high' | 'medium' | 'low'
 }
+
+export interface SyncConfig {
+  enabled: boolean
+  autoSync: boolean
+  lastSync?: string
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline'

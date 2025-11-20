@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Bell, Menu, Leaf, Home, PlusCircle } from 'lucide-react'
+import { Bell, Menu, Leaf, Home, PlusCircle, Cloud } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -10,12 +10,10 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
-import { getPlants } from '@/lib/storage'
-import { isBefore, parseISO } from 'date-fns'
-import {
-  requestNotificationPermission,
-  sendNotification,
-} from '@/services/notifications'
+import { requestNotificationPermission } from '@/services/notifications'
+import { CareMonitorService } from '@/services/careMonitor'
+import { CloudSyncService } from '@/services/cloudSync'
+import { getSyncConfig } from '@/lib/storage'
 
 export default function Layout() {
   const location = useLocation()
@@ -25,41 +23,21 @@ export default function Layout() {
   useEffect(() => {
     requestNotificationPermission()
 
-    const checkNotifications = () => {
-      const plants = getPlants()
-      let count = 0
-      const now = new Date()
+    const checkStatus = async () => {
+      // Run Care Monitor
+      const notifications = CareMonitorService.checkPlantStatus()
+      setNotificationCount(notifications.length)
 
-      plants.forEach((plant) => {
-        if (
-          plant.datas_importantes.proxima_rega_sugerida &&
-          isBefore(parseISO(plant.datas_importantes.proxima_rega_sugerida), now)
-        ) {
-          count++
-          // Trigger native notification if due today/now and not already notified (simplified logic)
-          // In a real app, we would track if we already sent a notification for this specific event
-        }
-        if (
-          plant.datas_importantes.proxima_adubacao_sugerida &&
-          isBefore(
-            parseISO(plant.datas_importantes.proxima_adubacao_sugerida),
-            now,
-          )
-        ) {
-          count++
-        }
-      })
-      setNotificationCount(count)
-
-      if (count > 0) {
-        // Example of triggering a notification
-        // sendNotification('Cuidados Pendentes', `Você tem ${count} plantas precisando de atenção!`)
+      // Run Auto Sync if enabled
+      const syncConfig = getSyncConfig()
+      if (syncConfig.enabled && syncConfig.autoSync && navigator.onLine) {
+        await CloudSyncService.syncData()
       }
     }
 
-    checkNotifications()
+    checkStatus()
     // Poll every minute
-    const interval = setInterval(checkNotifications, 60000)
+    const interval = setInterval(checkStatus, 60000)
     return () => clearInterval(interval)
   }, [location.pathname])
 
@@ -77,7 +55,7 @@ export default function Layout() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-primary">
+                <SheetTitle className="flex items-center gap-2 text-brand-green">
                   <Leaf className="h-6 w-6" />
                   Guia das Plantas
                 </SheetTitle>
@@ -85,31 +63,38 @@ export default function Layout() {
               <nav className="mt-8 flex flex-col gap-4">
                 <Link
                   to="/"
-                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-accent rounded-md transition-colors"
+                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-brand-light rounded-md transition-colors text-brand-dark"
                 >
                   <Home className="h-5 w-5" />
                   Início
                 </Link>
                 <Link
                   to="/add"
-                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-accent rounded-md transition-colors"
+                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-brand-light rounded-md transition-colors text-brand-dark"
                 >
                   <PlusCircle className="h-5 w-5" />
                   Adicionar Planta
                 </Link>
                 <Link
                   to="/notifications"
-                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-accent rounded-md transition-colors"
+                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-brand-light rounded-md transition-colors text-brand-dark"
                 >
                   <Bell className="h-5 w-5" />
-                  Alertas
+                  Alertas e Cuidados
+                </Link>
+                <Link
+                  to="/sync-backup"
+                  className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-brand-light rounded-md transition-colors text-brand-dark"
+                >
+                  <Cloud className="h-5 w-5" />
+                  Sincronização e Backup
                 </Link>
               </nav>
             </SheetContent>
           </Sheet>
         </div>
 
-        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-primary tracking-tight">
+        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-brand-green tracking-tight">
           Guia das Plantas
         </div>
 
@@ -121,7 +106,7 @@ export default function Layout() {
           {notificationCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute top-1 right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] rounded-full"
+              className="absolute top-1 right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] rounded-full animate-pulse"
             >
               {notificationCount}
             </Badge>

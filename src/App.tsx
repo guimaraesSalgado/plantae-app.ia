@@ -9,6 +9,7 @@ import AddPlant from './pages/AddPlant'
 import PlantDetails from './pages/PlantDetails'
 import EditPlant from './pages/EditPlant'
 import Notifications from './pages/Notifications'
+import SyncBackup from './pages/SyncBackup'
 import Onboarding from './pages/Onboarding'
 import NotFound from './pages/NotFound'
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/plant/:id" element={<PlantDetails />} />
           <Route path="/plant/:id/edit" element={<EditPlant />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/sync-backup" element={<SyncBackup />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

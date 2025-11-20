@@ -74,6 +74,13 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        // Custom brand colors from user story
+        brand: {
+          green: '#10b981', // Main green
+          dark: '#065f46', // Dark green
+          earth: '#78716c', // Earthy tone (stone-500)
+          light: '#f5f5f4', // Light earthy (stone-100)
+        },
         chart: {
           1: 'hsl(var(--chart-1))',
           2: 'hsl(var(--chart-2))',
