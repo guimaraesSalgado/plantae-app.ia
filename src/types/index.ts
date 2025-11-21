@@ -41,6 +41,7 @@ export interface Planta {
   foto_url: string
   status_saude: 'saudavel' | 'atencao' | 'critico' | 'desconhecido'
   sexo?: 'Masculino' | 'Feminino' | 'Hermafrodita' | null
+  tempo_de_vida_aproximado_dias?: number | null
   pontos_positivos: string[]
   pontos_negativos: string[]
   cuidados_recomendados: CuidadoRecomendado[]

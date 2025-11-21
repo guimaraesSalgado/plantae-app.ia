@@ -54,6 +54,7 @@ export const PlantsService = {
       foto_url: plant.foto_url,
       status_saude: plant.status_saude,
       sexo: plant.sexo,
+      tempo_de_vida_aproximado_dias: plant.tempo_de_vida_aproximado_dias,
       pontos_positivos: plant.pontos_positivos,
       pontos_negativos: plant.pontos_negativos,
       cuidados_recomendados: plant.cuidados_recomendados,

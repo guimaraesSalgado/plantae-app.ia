@@ -5,7 +5,6 @@ import {
   Save,
   Loader2,
   User,
-  Mail,
   Lock,
   Eye,
   EyeOff,
@@ -15,7 +14,6 @@ import {
   Sun,
   Bell,
   Settings,
-  BellRing,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,7 +52,6 @@ export default function Profile() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [isUsernameEditable, setIsUsernameEditable] = useState(false)
 
   // Password States
   const [oldPassword, setOldPassword] = useState('')
@@ -109,19 +106,6 @@ export default function Profile() {
     setIsLoading(true)
 
     const updates: any = { nome: name }
-    if (isUsernameEditable && username !== profile?.username) {
-      const isAvailable = await UserService.checkUsernameAvailable(username)
-      if (!isAvailable) {
-        setIsLoading(false)
-        toast({
-          variant: 'destructive',
-          title: 'Usuário indisponível',
-          description: 'Este nome de usuário já está em uso.',
-        })
-        return
-      }
-      updates.username = username
-    }
 
     const { error: profileError } = await UserService.updateProfile(
       user.id,
@@ -169,7 +153,6 @@ export default function Profile() {
     }
 
     setIsLoading(false)
-    setIsUsernameEditable(false)
     await refreshProfile()
 
     toast({
@@ -277,24 +260,15 @@ export default function Profile() {
 
             <div className="space-y-2">
               <Label htmlFor="username">Usuário</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={!isUsernameEditable}
-                  className="rounded-xl"
-                />
-                {!isUsernameEditable && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsUsernameEditable(true)}
-                    className="shrink-0"
-                  >
-                    Editar
-                  </Button>
-                )}
-              </div>
+              <Input
+                id="username"
+                value={username}
+                disabled
+                className="rounded-xl bg-secondary/30 border-transparent"
+              />
+              <p className="text-xs text-muted-foreground">
+                Seu nome de usuário é permanente.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -454,25 +428,6 @@ export default function Profile() {
                 onClick={() => navigate('/notifications')}
               >
                 Ver
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium flex items-center gap-2">
-                  <BellRing className="h-4 w-4" />
-                  Gerenciar Alertas
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Configurar preferências
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/alerts')}
-              >
-                Configurar
               </Button>
             </div>
           </CardContent>

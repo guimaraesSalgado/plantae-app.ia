@@ -102,6 +102,9 @@ export default function AddPlant() {
         nome_cientifico: analysisResult.nome_cientifico,
         foto_url: publicUrl,
         status_saude: analysisResult.status_saude || 'desconhecido',
+        sexo: analysisResult.sexo,
+        tempo_de_vida_aproximado_dias:
+          analysisResult.tempo_de_vida_aproximado_dias,
         pontos_positivos: analysisResult.pontos_positivos || [],
         pontos_negativos: analysisResult.pontos_negativos || [],
         cuidados_recomendados: analysisResult.cuidados_recomendados || [],

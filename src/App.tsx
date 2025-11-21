@@ -32,7 +32,6 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const SetUsername = lazy(() => import('./pages/SetUsername'))
 const History = lazy(() => import('./pages/History'))
 const Plants = lazy(() => import('./pages/Plants'))
-const ManageAlerts = lazy(() => import('./pages/ManageAlerts'))
 const RegisterNewExperience = lazy(
   () => import('./pages/RegisterNewExperience'),
 )
@@ -101,7 +100,6 @@ const AppRoutes = () => {
             <Route path="/plant/:id/edit" element={<EditPlant />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/alerts" element={<ManageAlerts />} />
             <Route path="/history" element={<History />} />
             <Route path="/sync-backup" element={<SyncBackup />} />
           </Route>

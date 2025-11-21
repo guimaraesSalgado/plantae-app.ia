@@ -15,6 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { PlantsService } from '@/services/plants'
 import { Planta } from '@/types'
+import { cn } from '@/lib/utils'
 
 export default function EditPlant() {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +30,8 @@ export default function EditPlant() {
   const [nomeCientifico, setNomeCientifico] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [sexo, setSexo] = useState<string>('')
+  const [lifespan, setLifespan] = useState<string>('')
+  const [lifespanError, setLifespanError] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -40,6 +43,11 @@ export default function EditPlant() {
           setNomeCientifico(foundPlant.nome_cientifico || '')
           setObservacoes(foundPlant.observacoes || '')
           setSexo(foundPlant.sexo || '')
+          setLifespan(
+            foundPlant.tempo_de_vida_aproximado_dias
+              ? foundPlant.tempo_de_vida_aproximado_dias.toString()
+              : '',
+          )
         } else {
           navigate('/404')
         }
@@ -50,6 +58,17 @@ export default function EditPlant() {
   const handleSave = async () => {
     if (!plant) return
 
+    setLifespanError(null)
+    let numLifespan: number | null = null
+
+    if (lifespan) {
+      numLifespan = parseInt(lifespan)
+      if (isNaN(numLifespan) || numLifespan <= 0) {
+        setLifespanError('Digite um número positivo.')
+        return
+      }
+    }
+
     setIsLoading(true)
 
     const updates: Partial<Planta> = {
@@ -58,6 +77,7 @@ export default function EditPlant() {
       nome_cientifico: nomeCientifico,
       observacoes,
       sexo: sexo as any,
+      tempo_de_vida_aproximado_dias: numLifespan,
     }
 
     const updatedPlant = await PlantsService.updatePlant(plant.id, updates)
@@ -136,18 +156,35 @@ export default function EditPlant() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sexo">Sexo da Planta</Label>
-            <Select value={sexo} onValueChange={setSexo}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o sexo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Masculino">Masculino</SelectItem>
-                <SelectItem value="Feminino">Feminino</SelectItem>
-                <SelectItem value="Hermafrodita">Hermafrodita</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="sexo">Sexo da Planta</Label>
+              <Select value={sexo} onValueChange={setSexo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Masculino">Masculino</SelectItem>
+                  <SelectItem value="Feminino">Feminino</SelectItem>
+                  <SelectItem value="Hermafrodita">Hermafrodita</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lifespan">Tempo de Vida (dias)</Label>
+              <Input
+                id="lifespan"
+                type="number"
+                value={lifespan}
+                onChange={(e) => setLifespan(e.target.value)}
+                placeholder="Ex: 365"
+                className={cn(lifespanError && 'border-destructive')}
+              />
+              {lifespanError && (
+                <p className="text-xs text-destructive">{lifespanError}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

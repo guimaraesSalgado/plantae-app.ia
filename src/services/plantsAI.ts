@@ -25,6 +25,8 @@ const MOCK_PLANTS: AIAnalysisResult[] = [
     nome_conhecido: 'Espada de São Jorge',
     nome_cientifico: 'Sansevieria trifasciata',
     status_saude: 'saudavel',
+    sexo: 'Hermafrodita',
+    tempo_de_vida_aproximado_dias: 3650, // ~10 years
     confidence: 0.98,
     pontos_positivos: [
       'Folhas eretas e firmes',
@@ -70,6 +72,8 @@ const MOCK_PLANTS: AIAnalysisResult[] = [
     nome_conhecido: 'Costela de Adão',
     nome_cientifico: 'Monstera deliciosa',
     status_saude: 'atencao',
+    sexo: 'Hermafrodita',
+    tempo_de_vida_aproximado_dias: 14600, // ~40 years
     confidence: 0.95,
     pontos_positivos: ['Folhas grandes e fenestradas', 'Crescimento vigoroso'],
     pontos_negativos: [
@@ -107,6 +111,8 @@ const MOCK_PLANTS: AIAnalysisResult[] = [
     nome_conhecido: 'Jiboia',
     nome_cientifico: 'Epipremnum aureum',
     status_saude: 'saudavel',
+    sexo: 'Feminino',
+    tempo_de_vida_aproximado_dias: 3650, // ~10 years
     confidence: 0.92,
     pontos_positivos: ['Folhas brilhantes', 'Muitos brotos novos'],
     pontos_negativos: [],
@@ -141,6 +147,8 @@ const MOCK_PLANTS: AIAnalysisResult[] = [
     nome_conhecido: 'Suculenta Echeveria',
     nome_cientifico: 'Echeveria elegans',
     status_saude: 'critico',
+    sexo: 'Hermafrodita',
+    tempo_de_vida_aproximado_dias: 1095, // ~3 years
     confidence: 0.89,
     pontos_positivos: ['Formato de roseta preservado'],
     pontos_negativos: [

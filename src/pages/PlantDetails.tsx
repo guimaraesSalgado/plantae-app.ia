@@ -15,6 +15,8 @@ import {
   Plus,
   Dna,
   Clock,
+  Hourglass,
+  Save,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +48,7 @@ import { ptBR } from 'date-fns/locale'
 import { CareHistory } from '@/components/CareHistory'
 import { v4 as uuidv4 } from 'uuid'
 import { ScanningEffect } from '@/components/ScanningEffect'
+import { cn } from '@/lib/utils'
 
 export default function PlantDetails() {
   const { id } = useParams<{ id: string }>()
@@ -60,11 +63,20 @@ export default function PlantDetails() {
   const [newLogNote, setNewLogNote] = useState('')
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false)
 
+  // Editable Lifespan State
+  const [lifespan, setLifespan] = useState<string>('')
+  const [lifespanError, setLifespanError] = useState<string | null>(null)
+
   useEffect(() => {
     if (id) {
       PlantsService.getPlantById(id).then((foundPlant) => {
         if (foundPlant) {
           setPlant(foundPlant)
+          setLifespan(
+            foundPlant.tempo_de_vida_aproximado_dias
+              ? foundPlant.tempo_de_vida_aproximado_dias.toString()
+              : '',
+          )
         } else {
           navigate('/404')
         }
@@ -94,6 +106,10 @@ export default function PlantDetails() {
               result.cuidados_recomendados || plant.cuidados_recomendados,
             vitaminas_e_adubos:
               result.vitaminas_e_adubos || plant.vitaminas_e_adubos,
+            sexo: result.sexo || plant.sexo,
+            tempo_de_vida_aproximado_dias:
+              result.tempo_de_vida_aproximado_dias ||
+              plant.tempo_de_vida_aproximado_dias,
             datas_importantes: {
               ...plant.datas_importantes,
               ultima_analise: new Date().toISOString(),
@@ -117,6 +133,11 @@ export default function PlantDetails() {
 
           if (updatedPlant) {
             setPlant(updatedPlant)
+            setLifespan(
+              updatedPlant.tempo_de_vida_aproximado_dias
+                ? updatedPlant.tempo_de_vida_aproximado_dias.toString()
+                : '',
+            )
             toast({
               title: 'Saúde atualizada!',
               description: 'As informações da planta foram renovadas.',
@@ -172,6 +193,34 @@ export default function PlantDetails() {
       toast({
         title: 'Informação atualizada',
         description: 'Sexo da planta atualizado.',
+      })
+    }
+  }
+
+  const handleLifespanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setLifespan(val)
+    setLifespanError(null)
+  }
+
+  const handleLifespanSave = async () => {
+    if (!plant) return
+
+    const numVal = parseInt(lifespan)
+    if (isNaN(numVal) || numVal <= 0) {
+      setLifespanError('Digite um número positivo.')
+      return
+    }
+
+    const updatedPlant = await PlantsService.updatePlant(plant.id, {
+      tempo_de_vida_aproximado_dias: numVal,
+    })
+
+    if (updatedPlant) {
+      setPlant(updatedPlant)
+      toast({
+        title: 'Informação atualizada',
+        description: 'Tempo de vida aproximado salvo.',
       })
     }
   }
@@ -278,7 +327,7 @@ export default function PlantDetails() {
 
         <TabsContent value="details" className="space-y-4 animate-fade-in">
           {/* Basic Info Card */}
-          <Card>
+          <Card className="border-border shadow-subtle">
             <CardHeader className="pb-2">
               <CardTitle className="section-title mb-0">
                 Informações Básicas
@@ -288,7 +337,7 @@ export default function PlantDetails() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Tempo de vida</span>
+                  <span>Idade no Jardim</span>
                 </div>
                 <span className="font-medium">
                   Aproximadamente {daysOfLife} dias
@@ -304,7 +353,7 @@ export default function PlantDetails() {
                   value={plant.sexo || ''}
                   onValueChange={handleSexChange}
                 >
-                  <SelectTrigger className="w-[140px] h-8">
+                  <SelectTrigger className="w-[140px] h-8 rounded-lg border-border">
                     <SelectValue placeholder="Definir" />
                   </SelectTrigger>
                   <SelectContent>
@@ -313,6 +362,45 @@ export default function PlantDetails() {
                     <SelectItem value="Hermafrodita">Hermafrodita</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Hourglass className="h-4 w-4" />
+                    <span>Tempo de vida aproximado</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      value={lifespan}
+                      onChange={handleLifespanChange}
+                      placeholder="Ex: 365"
+                      className={cn(
+                        'h-9 rounded-lg border-border',
+                        lifespanError && 'border-destructive',
+                      )}
+                    />
+                    {lifespanError && (
+                      <p className="text-xs text-destructive mt-1">
+                        {lifespanError}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleLifespanSave}
+                    className="h-9 px-3"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Em dias. Estimativa de vida total da espécie.
+                </p>
               </div>
             </CardContent>
           </Card>
