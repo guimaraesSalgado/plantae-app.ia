@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Mail, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft, Mail, Loader2, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -11,40 +11,50 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase/client'
+import { AuthFlowService } from '@/services/auth-flow'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSent, setIsSent] = useState(false)
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!identifier.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Campo obrigatório',
+        description: 'Informe seu e-mail para continuar.',
+      })
+      return
+    }
+
     setIsLoading(true)
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+    const { data, error } =
+      await AuthFlowService.initiateTemporaryPasswordReset(identifier)
 
     setIsLoading(false)
 
     if (error) {
-      let message = 'Ocorreu um erro ao enviar o email.'
-      if (error.message.includes('rate limit'))
-        message = 'Muitas tentativas. Tente novamente mais tarde.'
-
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: message,
+        description:
+          error.message ||
+          'Não encontramos uma conta com esses dados. Verifique e tente novamente.',
       })
     } else {
       setIsSent(true)
+      // For demo purposes, if the backend returned the password in debug field, log it
+      if (data?.debug_temp_password) {
+        console.log('DEBUG: Temporary Password:', data.debug_temp_password)
+      }
       toast({
-        title: 'Email enviado',
-        description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+        title: 'Senha enviada',
+        description: 'Enviamos uma senha temporária para o seu e-mail.',
       })
     }
   }
@@ -69,18 +79,18 @@ export default function ForgotPassword() {
               Recuperar Senha
             </CardTitle>
             <CardDescription className="text-center">
-              Digite seu email para receber o link de redefinição.
+              Informe seus dados para receber uma senha temporária.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isSent ? (
               <div className="text-center space-y-4 py-4">
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <Mail className="h-8 w-8 text-green-600" />
+                  <KeyRound className="h-8 w-8 text-green-600" />
                 </div>
                 <p className="text-foreground font-medium">
-                  Enviamos um link para redefinir sua senha. Verifique seu
-                  e-mail.
+                  Enviamos uma senha temporária para o seu e-mail. Use-a para
+                  acessar o aplicativo e redefinir sua senha.
                 </p>
                 <Button
                   variant="outline"
@@ -96,11 +106,11 @@ export default function ForgotPassword() {
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
-                      type="email"
-                      placeholder="Seu email cadastrado"
+                      type="text"
+                      placeholder="E-mail ou Nome de Usuário"
                       className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
                       required
                     />
                   </div>
@@ -114,7 +124,7 @@ export default function ForgotPassword() {
                   {isLoading ? (
                     <Loader2 className="animate-spin mr-2" />
                   ) : (
-                    'Enviar Link'
+                    'Enviar Senha Temporária'
                   )}
                 </Button>
               </form>
