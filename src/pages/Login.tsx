@@ -24,7 +24,7 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      // Call Edge Function for Username Login
+      // Call Edge Function for Username/Email Login
       const { data, error } = await supabase.functions.invoke(
         'login-with-username',
         {
@@ -97,11 +97,12 @@ export default function Login() {
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Nome de usuário"
+                    placeholder="Nome de usuário ou Email"
                     className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="relative">
@@ -113,11 +114,13 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />

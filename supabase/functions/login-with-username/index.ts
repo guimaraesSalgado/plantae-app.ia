@@ -31,28 +31,34 @@ export const onRequest = async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // 1. Find email by username
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('email')
-      .eq('username', username)
-      .single()
+    let emailToSignIn = username
+    // Check if the input looks like an email address
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)
 
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Usuário não encontrado.' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (!isEmail) {
+      // 1. Find email by username if input is not an email
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('email')
+        .eq('username', username)
+        .single()
+
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não encontrado.' }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
+      emailToSignIn = user.email
     }
 
     // 2. Sign in with email and password using the public client context
-    // We use the admin client to sign in to get the session, but we return it to the user
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.signInWithPassword({
-        email: user.email,
+        email: emailToSignIn,
         password: password,
       })
 
