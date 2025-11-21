@@ -5,7 +5,6 @@ import {
   Check,
   Clock,
   Droplets,
-  Sprout,
   AlertTriangle,
   Leaf,
   Trash2,
@@ -17,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { Notification } from '@/types'
+import { AppNotification } from '@/types'
 import { NotificationsService } from '@/services/notifications'
 import { format, isToday, isTomorrow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -26,7 +25,7 @@ import { cn } from '@/lib/utils'
 export default function Notifications() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {

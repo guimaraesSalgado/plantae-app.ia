@@ -65,13 +65,13 @@ export interface NotificationItem {
     | 'alerta'
     | 'geral'
     | 'poda'
-  description: string // Used for backward compatibility or mapped from message
-  dueDate: Date // Used for backward compatibility or mapped from data_hora
+  description: string
+  dueDate: Date
   isOverdue: boolean
   priority: 'high' | 'medium' | 'low'
 }
 
-export interface Notification {
+export interface AppNotification {
   id: string
   user_id: string
   tipo: string

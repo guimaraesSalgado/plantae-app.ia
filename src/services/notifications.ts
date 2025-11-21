@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
-import { Notification } from '@/types'
+import { AppNotification } from '@/types'
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
   if (!('Notification' in window)) {
@@ -33,7 +33,7 @@ export const sendNotification = (title: string, body: string) => {
 
 // Database Operations
 export const NotificationsService = {
-  async getNotifications(): Promise<Notification[]> {
+  async getNotifications(): Promise<AppNotification[]> {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
@@ -43,7 +43,7 @@ export const NotificationsService = {
       console.error('Error fetching notifications:', error)
       return []
     }
-    return data as Notification[]
+    return data as AppNotification[]
   },
 
   async getUnreadCount(): Promise<number> {
@@ -90,8 +90,8 @@ export const NotificationsService = {
   },
 
   async createNotification(
-    notification: Omit<Notification, 'id' | 'data_hora' | 'lida'>,
-  ): Promise<Notification | null> {
+    notification: Omit<AppNotification, 'id' | 'data_hora' | 'lida'>,
+  ): Promise<AppNotification | null> {
     const { data, error } = await supabase
       .from('notifications')
       .insert(notification)
@@ -102,6 +102,6 @@ export const NotificationsService = {
       console.error('Error creating notification:', error)
       return null
     }
-    return data as Notification
+    return data as AppNotification
   },
 }
