@@ -1,32 +1,60 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Leaf, Mail, Lock, Loader2, ArrowRight } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Leaf, Mail, Lock, Loader2, Eye, EyeOff, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { UserService } from '@/services/user'
 
 export default function Login() {
   const navigate = useNavigate()
   const { signInWithEmail, signInWithGoogle, signUpWithEmail } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+
+  // Form States
+  const [identifier, setIdentifier] = useState('') // Email or Username
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    const { error } = await signInWithEmail(email, password)
+
+    let loginEmail = identifier
+
+    // Check if identifier is email or username
+    if (!identifier.includes('@')) {
+      const fetchedEmail = await UserService.getEmailByUsername(identifier)
+      if (fetchedEmail) {
+        loginEmail = fetchedEmail
+      } else {
+        setIsLoading(false)
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao entrar',
+          description: 'Usuário ou senha inválidos.',
+        })
+        return
+      }
+    }
+
+    const { error } = await signInWithEmail(loginEmail, password)
     setIsLoading(false)
 
     if (error) {
+      let message = 'Ocorreu um erro ao fazer login.'
+      if (error.message.includes('Invalid login credentials'))
+        message = 'Usuário ou senha inválidos.'
+
       toast({
         variant: 'destructive',
         title: 'Erro ao entrar',
-        description: error.message,
+        description: message,
       })
     } else {
       navigate('/')
@@ -40,10 +68,14 @@ export default function Login() {
     setIsLoading(false)
 
     if (error) {
+      let message = error.message
+      if (message.includes('already registered'))
+        message = 'Este e-mail já está em uso.'
+
       toast({
         variant: 'destructive',
         title: 'Erro ao criar conta',
-        description: error.message,
+        description: message,
       })
     } else {
       toast({
@@ -61,7 +93,7 @@ export default function Login() {
       toast({
         variant: 'destructive',
         title: 'Erro com Google',
-        description: error.message,
+        description: 'Ocorreu um erro ao conectar com o Google.',
       })
     }
   }
@@ -100,29 +132,48 @@ export default function Login() {
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleEmailLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
-                        type="email"
-                        placeholder="Seu email"
+                        type="text"
+                        placeholder="Usuário ou e-mail"
                         className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                         required
                       />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Sua senha"
-                        className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
+                        className="pl-10 pr-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex justify-end">
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs text-primary hover:underline font-medium"
+                      >
+                        Esqueci minha senha
+                      </Link>
                     </div>
                   </div>
 
@@ -157,14 +208,25 @@ export default function Login() {
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Crie uma senha"
-                        className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
+                        className="pl-10 pr-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         minLength={6}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
 

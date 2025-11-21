@@ -9,8 +9,6 @@ import {
   History,
   Bell,
   Leaf,
-  Flower,
-  Sprout,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -34,19 +32,14 @@ export default function Layout() {
   const { user, profile, signOut } = useAuth()
   const [unreadCount, setUnreadCount] = useState(0)
 
-  // Check for notifications and permissions
   useEffect(() => {
     requestNotificationPermission()
 
     const checkStatus = async () => {
-      // Run Care Monitor (generates DB notifications)
       await CareMonitorService.checkPlantStatus()
-
-      // Update badge count
       const count = await NotificationsService.getUnreadCount()
       setUnreadCount(count)
 
-      // Run Auto Sync if enabled
       const syncConfig = getSyncConfig()
       if (syncConfig.enabled && syncConfig.autoSync && navigator.onLine) {
         await CloudSyncService.syncData()
@@ -54,18 +47,17 @@ export default function Layout() {
     }
 
     checkStatus()
-    // Poll every minute
     const interval = setInterval(checkStatus, 60000)
 
     return () => clearInterval(interval)
   }, [location.pathname])
 
   const navItems = [
-    { path: '/profile', label: 'Editar Dados Cadastrais', icon: User },
     { path: '/', label: 'Plantas', icon: Home },
-    { path: '/add', label: 'Adicionar Planta', icon: PlusCircle },
-    { path: '/history', label: 'Histórico', icon: History }, // Placeholder route if not implemented, or redirect to home
+    { path: '/add', label: 'Adicionar', icon: PlusCircle },
+    { path: '/history', label: 'Histórico', icon: History },
     { path: '/notifications', label: 'Notificações', icon: Bell },
+    { path: '/profile', label: 'Perfil', icon: User },
     { path: '/sync-backup', label: 'Configurações', icon: Settings },
   ]
 
@@ -91,9 +83,9 @@ export default function Layout() {
     navigate('/notifications')
   }
 
-  // Welcome Message Logic
   const getWelcomeMessage = () => {
-    const name = profile?.nome?.split(' ')[0] || 'Jardineiro'
+    const name =
+      profile?.nome?.split(' ')[0] || profile?.username || 'Jardineiro'
     if (unreadCount > 0) {
       return (
         <>
@@ -101,21 +93,20 @@ export default function Layout() {
           Você tem <span className="font-bold text-white">
             {unreadCount}
           </span>{' '}
-          notificações pendentes.
+          notificações.
         </>
       )
     }
     return (
       <>
         Olá, {name}! 🌿 <br />
-        Tudo pronto para cuidar das suas plantas hoje?
+        Tudo pronto hoje?
       </>
     )
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-background transition-colors duration-300">
-      {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 shadow-sm transition-all duration-300">
         <div className="flex items-center gap-2">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -133,9 +124,7 @@ export default function Layout() {
               side="left"
               className="w-[300px] sm:w-[350px] border-r-border bg-card p-0 flex flex-col"
             >
-              {/* Menu Header with Gradient */}
               <div className="bg-gradient-to-br from-[#065f46] to-[#10b981] p-6 pt-10 text-white relative overflow-hidden">
-                {/* Decorative background elements */}
                 <Leaf className="absolute top-4 right-4 text-white/10 w-24 h-24 rotate-12" />
 
                 <div className="flex flex-col items-center gap-4 mb-4 relative z-10">
@@ -193,10 +182,6 @@ export default function Layout() {
                           </Badge>
                         )}
                       </button>
-                      {/* Separators between groups */}
-                      {(index === 0 || index === 3 || index === 5) && (
-                        <div className="my-1 border-t border-border/40 mx-4" />
-                      )}
                     </div>
                   )
                 })}
@@ -234,7 +219,6 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 pt-20 pb-8 px-4 container mx-auto max-w-md md:max-w-2xl lg:max-w-4xl overflow-hidden">
         <div key={location.pathname} className="animate-page-enter">
           <Outlet />

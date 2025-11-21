@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
-import { Planta } from '@/types'
+import { Planta, HistoryLogItem } from '@/types'
 
 export const PlantsService = {
   async getPlants(): Promise<Planta[]> {
@@ -13,7 +13,6 @@ export const PlantsService = {
       return []
     }
 
-    // Map DB columns to Planta type if needed (Supabase returns snake_case, type expects snake_case mostly)
     return data.map((p: any) => ({
       ...p,
       createdAt: p.created_at,
@@ -84,7 +83,6 @@ export const PlantsService = {
     id: string,
     updates: Partial<Planta>,
   ): Promise<Planta | null> {
-    // Map updates to DB columns
     const dbUpdates: any = { ...updates }
     if (updates.createdAt) delete dbUpdates.createdAt
     if (updates.updatedAt) delete dbUpdates.updatedAt
@@ -116,5 +114,26 @@ export const PlantsService = {
       return false
     }
     return true
+  },
+
+  async getHistoryLogs(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<HistoryLogItem[]> {
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    const { data, error } = await supabase
+      .from('plant_logs_view')
+      .select('*')
+      .order('log_date', { ascending: false })
+      .range(from, to)
+
+    if (error) {
+      console.error('Error fetching history logs:', error)
+      return []
+    }
+
+    return data as HistoryLogItem[]
   },
 }

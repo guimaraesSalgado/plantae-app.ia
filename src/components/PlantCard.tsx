@@ -1,6 +1,12 @@
 import { Planta } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
-import { Trash2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
+import {
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  AlertTriangle,
+  HelpCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -28,34 +34,40 @@ export function PlantCard({
   onDelete,
   variant = 'grid',
 }: PlantCardProps) {
-  const statusColors = {
-    saudavel: 'bg-[#10b981]', // Green
-    atencao: 'bg-yellow-400', // Yellow
-    critico: 'bg-red-400', // Red
-    desconhecido: 'bg-gray-400',
+  const statusConfig = {
+    saudavel: {
+      color: 'bg-green-500',
+      label: 'Saudável',
+      icon: CheckCircle2,
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+    },
+    atencao: {
+      color: 'bg-yellow-500',
+      label: 'Atenção',
+      icon: AlertTriangle,
+      bg: 'bg-yellow-100',
+      text: 'text-yellow-700',
+    },
+    critico: {
+      color: 'bg-red-500',
+      label: 'Crítico',
+      icon: AlertCircle,
+      bg: 'bg-red-100',
+      text: 'text-red-700',
+    },
+    desconhecido: {
+      color: 'bg-gray-400',
+      label: 'Desconhecido',
+      icon: HelpCircle,
+      bg: 'bg-gray-100',
+      text: 'text-gray-700',
+    },
   }
 
-  const statusLabels = {
-    saudavel: 'Saudável',
-    atencao: 'Atenção',
-    critico: 'Crítico',
-    desconhecido: 'Desconhecido',
-  }
+  const config = statusConfig[plant.status_saude] || statusConfig.desconhecido
+  const StatusIcon = config.icon
 
-  const getStatusIcon = (status: Planta['status_saude']) => {
-    switch (status) {
-      case 'saudavel':
-        return <CheckCircle2 className="h-4 w-4 text-white" />
-      case 'atencao':
-        return <AlertTriangle className="h-4 w-4 text-white" />
-      case 'critico':
-        return <AlertCircle className="h-4 w-4 text-white" />
-      default:
-        return null
-    }
-  }
-
-  // Carousel Variant - Organic Material Design
   if (variant === 'carousel') {
     return (
       <Card
@@ -75,11 +87,11 @@ export function PlantCard({
             <div
               className={cn(
                 'absolute top-3 right-3 h-6 w-6 rounded-full flex items-center justify-center shadow-sm',
-                statusColors[plant.status_saude],
+                config.color,
               )}
-              title={statusLabels[plant.status_saude]}
+              title={config.label}
             >
-              {getStatusIcon(plant.status_saude)}
+              <StatusIcon className="h-4 w-4 text-white" />
             </div>
             <h3 className="font-bold text-lg text-foreground truncate pr-6">
               {plant.apelido}
@@ -90,10 +102,13 @@ export function PlantCard({
             <div className="mt-auto">
               <span
                 className={cn(
-                  'text-[10px] font-medium px-2 py-1 rounded-full bg-secondary text-foreground border border-border uppercase tracking-wide',
+                  'text-[10px] font-medium px-2 py-1 rounded-full border uppercase tracking-wide',
+                  config.bg,
+                  config.text,
+                  'border-transparent',
                 )}
               >
-                {statusLabels[plant.status_saude]}
+                {config.label}
               </span>
             </div>
           </div>
@@ -102,7 +117,6 @@ export function PlantCard({
     )
   }
 
-  // List Variant - Minimalist
   if (variant === 'list') {
     return (
       <Card
@@ -119,7 +133,7 @@ export function PlantCard({
             <div
               className={cn(
                 'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card',
-                statusColors[plant.status_saude],
+                config.color,
               )}
             />
           </div>
@@ -137,16 +151,11 @@ export function PlantCard({
             <span
               className={cn(
                 'text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline-block',
-                plant.status_saude === 'saudavel'
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  : plant.status_saude === 'atencao'
-                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : plant.status_saude === 'critico'
-                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+                config.bg,
+                config.text,
               )}
             >
-              {statusLabels[plant.status_saude]}
+              {config.label}
             </span>
             {onDelete && (
               <div onClick={(e) => e.stopPropagation()}>
@@ -187,7 +196,6 @@ export function PlantCard({
     )
   }
 
-  // Grid Variant (Default) - 4:3 Aspect Ratio
   return (
     <Card
       className="overflow-hidden hover:shadow-elevation transition-all duration-300 cursor-pointer group relative border-none shadow-subtle rounded-2xl h-full flex flex-col bg-card active:scale-95"
@@ -202,11 +210,12 @@ export function PlantCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
         <div
           className={cn(
-            'absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm',
-            statusColors[plant.status_saude],
+            'absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm flex items-center gap-1',
+            config.color,
           )}
         >
-          {statusLabels[plant.status_saude]}
+          <StatusIcon className="h-3 w-3" />
+          {config.label}
         </div>
       </div>
 

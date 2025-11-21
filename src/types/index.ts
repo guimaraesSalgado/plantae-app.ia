@@ -93,6 +93,18 @@ export interface UserProfile {
   id: string
   email: string
   nome: string | null
+  username: string | null
   foto_perfil_url: string | null
   data_criacao: string
+}
+
+export interface HistoryLogItem {
+  plant_id: string
+  plant_name: string
+  plant_photo: string
+  user_id: string
+  log_id: string
+  log_date: string
+  log_type: CareLog['type']
+  log_note: string
 }

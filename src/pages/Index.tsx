@@ -83,19 +83,16 @@ export default function Index() {
     }
   }
 
-  // Filter Logic
   const filteredPlants = useMemo(() => {
     return plants.filter((plant) => {
-      // Search Filter
       const matchesSearch =
         plant.apelido.toLowerCase().includes(searchQuery.toLowerCase()) ||
         plant.nome_conhecido.toLowerCase().includes(searchQuery.toLowerCase())
 
-      // Status Filter
       let matchesStatus = true
-      if (statusFilter === 'Bem') {
+      if (statusFilter === 'Saudável') {
         matchesStatus = plant.status_saude === 'saudavel'
-      } else if (statusFilter === 'Estável') {
+      } else if (statusFilter === 'Atenção') {
         matchesStatus = plant.status_saude === 'atencao'
       } else if (statusFilter === 'Crítico') {
         matchesStatus = plant.status_saude === 'critico'
@@ -105,30 +102,26 @@ export default function Index() {
     })
   }, [plants, searchQuery, statusFilter])
 
-  // Pagination Logic
   const totalPages = Math.ceil(filteredPlants.length / ITEMS_PER_PAGE)
   const paginatedPlants = filteredPlants.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   )
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery, statusFilter])
 
-  // Attention Plants Logic
   const attentionPlants = useMemo(() => {
     return plants.filter(
       (p) => p.status_saude === 'critico' || p.status_saude === 'atencao',
     )
   }, [plants])
 
-  const filterTags = ['Todas', 'Bem', 'Estável', 'Crítico']
+  const filterTags = ['Todas', 'Saudável', 'Atenção', 'Crítico']
 
   return (
     <div className="space-y-8 pb-24">
-      {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="feature-title">Meu Jardim</h1>
         <p className="text-muted-foreground">
@@ -136,7 +129,6 @@ export default function Index() {
         </p>
       </div>
 
-      {/* Attention Carousel */}
       {attentionPlants.length > 0 && (
         <AttentionCarousel
           plants={attentionPlants}
@@ -144,10 +136,8 @@ export default function Index() {
         />
       )}
 
-      {/* Controls Section - Only show if there are plants */}
       {plants.length > 0 && (
         <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300 animate-fade-in">
-          {/* Search and View Toggle */}
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -181,7 +171,6 @@ export default function Index() {
             </ToggleGroup>
           </div>
 
-          {/* Filter Tags */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {filterTags.map((tag) => (
               <button
@@ -201,14 +190,12 @@ export default function Index() {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="min-h-[300px]">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : plants.length === 0 ? (
-          // Empty State - No plants at all
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
             <div className="bg-secondary/50 p-6 rounded-full">
               <img
@@ -225,7 +212,6 @@ export default function Index() {
             </p>
           </div>
         ) : filteredPlants.length === 0 ? (
-          // Empty State - No results for filter
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
             <div className="bg-secondary/50 p-6 rounded-full">
               <Search className="w-12 h-12 text-muted-foreground opacity-50" />
@@ -258,7 +244,6 @@ export default function Index() {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <Pagination>
                 <PaginationContent>

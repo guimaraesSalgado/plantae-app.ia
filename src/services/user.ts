@@ -20,4 +20,38 @@ export const UserService = {
     })
     return { error }
   },
+
+  async checkUsernameAvailable(username: string): Promise<boolean> {
+    const { count, error } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('username', username)
+
+    if (error) {
+      console.error('Error checking username:', error)
+      return false
+    }
+
+    return count === 0
+  },
+
+  async getEmailByUsername(username: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('username', username)
+      .single()
+
+    if (error || !data) return null
+    return data.email
+  },
+
+  async setUsername(userId: string, username: string): Promise<{ error: any }> {
+    const { error } = await supabase
+      .from('users')
+      .update({ username })
+      .eq('id', userId)
+
+    return { error }
+  },
 }
