@@ -98,6 +98,29 @@ export interface UserProfile {
   data_criacao: string
 }
 
+export type ActivityType =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'care'
+  | 'ia'
+  | 'status_change'
+  | 'refresh'
+
+export interface ActivityLog {
+  id: string
+  user_id: string
+  tipo: ActivityType
+  planta_id?: string
+  data_hora: string
+  descricao_resumida: string
+  origem: 'user' | 'system' | 'ia'
+  plants?: {
+    apelido: string
+    foto_url: string
+  }
+}
+
 export interface HistoryLogItem {
   plant_id: string
   plant_name: string

@@ -10,7 +10,7 @@ import {
   Lock,
   Eye,
   EyeOff,
-  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,6 +22,18 @@ import { UserService } from '@/services/user'
 import { StorageService } from '@/services/storage'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -31,7 +43,9 @@ export default function Profile() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [isUsernameEditable, setIsUsernameEditable] = useState(false)
 
   // Password States
   const [oldPassword, setOldPassword] = useState('')
@@ -49,6 +63,7 @@ export default function Profile() {
   useEffect(() => {
     if (profile) {
       setName(profile.nome || '')
+      setUsername(profile.username || '')
       setAvatarUrl(profile.foto_perfil_url)
     }
   }, [profile])
@@ -73,24 +88,16 @@ export default function Profile() {
   const handleSave = async () => {
     if (!user) return
 
-    // Reset errors
     setPasswordError(null)
 
     // Validate Passwords
-    if (newPassword || confirmPassword) {
+    if (oldPassword) {
       if (newPassword !== confirmPassword) {
-        setPasswordError(
-          'As senhas não coincidem. Verifique e tente novamente.',
-        )
+        setPasswordError('As senhas não coincidem.')
         return
       }
-      if (!oldPassword) {
-        toast({
-          variant: 'destructive',
-          title: 'Senha atual necessária',
-          description:
-            'Por favor, digite sua senha atual para autorizar a mudança.',
-        })
+      if (!newPassword) {
+        setPasswordError('Digite a nova senha.')
         return
       }
     }
@@ -98,9 +105,25 @@ export default function Profile() {
     setIsLoading(true)
 
     // 1. Update Profile Data
-    const { error: profileError } = await UserService.updateProfile(user.id, {
-      nome: name,
-    })
+    const updates: any = { nome: name }
+    if (isUsernameEditable && username !== profile?.username) {
+      const isAvailable = await UserService.checkUsernameAvailable(username)
+      if (!isAvailable) {
+        setIsLoading(false)
+        toast({
+          variant: 'destructive',
+          title: 'Usuário indisponível',
+          description: 'Este nome de usuário já está em uso.',
+        })
+        return
+      }
+      updates.username = username
+    }
+
+    const { error: profileError } = await UserService.updateProfile(
+      user.id,
+      updates,
+    )
 
     if (profileError) {
       setIsLoading(false)
@@ -113,8 +136,7 @@ export default function Profile() {
     }
 
     // 2. Update Password (if provided)
-    if (newPassword) {
-      // Verify old password by trying to sign in (Authorization check)
+    if (oldPassword && newPassword) {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user.email!,
         password: oldPassword,
@@ -124,13 +146,11 @@ export default function Profile() {
         setIsLoading(false)
         toast({
           variant: 'destructive',
-          title: 'Senha incorreta',
-          description: 'A senha atual digitada está incorreta.',
+          title: 'Senha atual incorreta.',
         })
         return
       }
 
-      // If authorized, update password
       const { error: updateError } =
         await UserService.updatePassword(newPassword)
 
@@ -143,19 +163,18 @@ export default function Profile() {
         })
         return
       }
+      toast({ title: 'Senha atualizada com sucesso.' })
     }
 
     setIsLoading(false)
+    setIsUsernameEditable(false)
     await refreshProfile()
 
-    // Success Feedback
     toast({
       title: 'Perfil atualizado com sucesso!',
-      description: 'Seus dados foram salvos.',
-      className: 'bg-brand-green text-white border-none animate-scale-press',
+      className: 'bg-brand-green text-white border-none',
     })
 
-    // Clear password fields
     setOldPassword('')
     setNewPassword('')
     setConfirmPassword('')
@@ -197,32 +216,64 @@ export default function Profile() {
             disabled={isLoading}
           />
         </div>
-        <p className="text-sm text-muted-foreground">
-          Toque para alterar a foto
-        </p>
       </div>
 
       <div className="space-y-6 bg-card p-6 rounded-2xl shadow-subtle border border-border/50">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-brand-dark font-medium">
-            Nome Completo
-          </Label>
+          <Label htmlFor="name">Nome Completo</Label>
           <div className="relative">
             <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="pl-10 rounded-xl border-border focus:border-primary focus:ring-primary/20"
-              placeholder="Seu nome"
+              className="pl-10 rounded-xl"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-brand-dark font-medium">
-            Email
-          </Label>
+          <Label htmlFor="username">Usuário (User)</Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={!isUsernameEditable}
+                className="pl-10 rounded-xl"
+              />
+            </div>
+            {!isUsernameEditable && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">Editar</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Atenção</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Seu nome de usuário só pode ser alterado uma única vez.
+                      Deseja realmente continuar?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => setIsUsernameEditable(true)}
+                    >
+                      Continuar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
             <Input
@@ -248,12 +299,12 @@ export default function Profile() {
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 className="pr-10 rounded-xl"
-                placeholder="Digite sua senha atual"
+                placeholder="Digite para alterar a senha"
               />
               <button
                 type="button"
                 onClick={() => setShowOldPassword(!showOldPassword)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
               >
                 {showOldPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -264,65 +315,65 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">Nova Senha</Label>
-            <div className="relative">
-              <Input
-                id="newPassword"
-                type={showNewPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="pr-10 rounded-xl"
-                placeholder="Digite a nova senha"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showNewPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
+          <Collapsible open={oldPassword.length > 0}>
+            <CollapsibleContent className="space-y-4 animate-slide-up">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pr-10 rounded-xl"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={cn(
-                  'pr-10 rounded-xl',
-                  passwordError
-                    ? 'border-destructive focus:ring-destructive/20'
-                    : '',
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={cn(
+                      'pr-10 rounded-xl',
+                      passwordError ? 'border-destructive' : '',
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {passwordError && (
+                  <p className="text-sm text-destructive mt-1">
+                    {passwordError}
+                  </p>
                 )}
-                placeholder="Confirme a nova senha"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {passwordError && (
-              <p className="text-sm text-destructive mt-1 animate-fade-in">
-                {passwordError}
-              </p>
-            )}
-          </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </div>
 

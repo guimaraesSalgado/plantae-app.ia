@@ -8,21 +8,31 @@ export default function Splash() {
   const { session, loading } = useAuth()
 
   useEffect(() => {
-    if (!loading) {
-      const timer = setTimeout(() => {
-        if (session) {
-          navigate('/')
-        } else {
-          navigate('/login')
-        }
-      }, 2500) // 2.5 seconds duration
+    // Ensure splash stays for at least 1.5s
+    const minTime = new Promise((resolve) => setTimeout(resolve, 1500))
+    const authCheck = new Promise((resolve) => {
+      if (!loading) resolve(true)
+      else {
+        const interval = setInterval(() => {
+          if (!loading) {
+            clearInterval(interval)
+            resolve(true)
+          }
+        }, 100)
+      }
+    })
 
-      return () => clearTimeout(timer)
-    }
+    Promise.all([minTime, authCheck]).then(() => {
+      if (session) {
+        navigate('/')
+      } else {
+        navigate('/login')
+      }
+    })
   }, [loading, session, navigate])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#065f46] to-[#10b981] relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#065f46] to-[#10b981] relative overflow-hidden z-[100]">
       {/* Wind Particles */}
       <div
         className="absolute top-1/4 left-0 w-2 h-2 bg-white/20 rounded-full animate-wind-particle"

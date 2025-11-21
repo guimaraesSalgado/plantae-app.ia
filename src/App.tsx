@@ -1,26 +1,35 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import Layout from './components/Layout'
-import Index from './pages/Index'
-import AddPlant from './pages/AddPlant'
-import PlantDetails from './pages/PlantDetails'
-import EditPlant from './pages/EditPlant'
-import SyncBackup from './pages/SyncBackup'
-import Onboarding from './pages/Onboarding'
-import NotFound from './pages/NotFound'
-import Splash from './pages/Splash'
-import Login from './pages/Login'
-import Profile from './pages/Profile'
-import Notifications from './pages/Notifications'
-import ForgotPassword from './pages/ForgotPassword'
-import SetUsername from './pages/SetUsername'
-import History from './pages/History'
 import ScrollToTop from './components/ScrollToTop'
-import { useEffect } from 'react'
+import { useEffect, Suspense, lazy, useState } from 'react'
 import { hydrateStorage } from './lib/storage'
+import { LoadingOverlay } from './components/LoadingOverlay'
+
+// Lazy load pages
+const Index = lazy(() => import('./pages/Index'))
+const AddPlant = lazy(() => import('./pages/AddPlant'))
+const PlantDetails = lazy(() => import('./pages/PlantDetails'))
+const EditPlant = lazy(() => import('./pages/EditPlant'))
+const SyncBackup = lazy(() => import('./pages/SyncBackup'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const Splash = lazy(() => import('./pages/Splash'))
+const Login = lazy(() => import('./pages/Login'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Notifications = lazy(() => import('./pages/Notifications'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const SetUsername = lazy(() => import('./pages/SetUsername'))
+const History = lazy(() => import('./pages/History'))
 
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { session, loading, profile } = useAuth()
@@ -32,7 +41,6 @@ const RequireAuth = ({ children }: { children: JSX.Element }) => {
   }
 
   // If user is logged in but has no username, force them to set it
-  // We check if profile is loaded and username is missing
   if (
     profile &&
     !profile.username &&
@@ -45,33 +53,47 @@ const RequireAuth = ({ children }: { children: JSX.Element }) => {
 }
 
 const AppRoutes = () => {
+  const location = useLocation()
+  const [isNavigating, setIsNavigating] = useState(false)
+
+  useEffect(() => {
+    setIsNavigating(true)
+    const timer = setTimeout(() => setIsNavigating(false), 300) // Simulate min loading time for smoothness
+    return () => clearTimeout(timer)
+  }, [location.pathname])
+
   return (
-    <Routes>
-      <Route path="/splash" element={<Splash />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/onboarding" element={<Onboarding />} />
+    <>
+      <LoadingOverlay isVisible={isNavigating} />
+      <Suspense fallback={<LoadingOverlay isVisible={true} />}>
+        <Routes>
+          <Route path="/splash" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/onboarding" element={<Onboarding />} />
 
-      <Route
-        element={
-          <RequireAuth>
-            <Layout />
-          </RequireAuth>
-        }
-      >
-        <Route path="/" element={<Index />} />
-        <Route path="/set-username" element={<SetUsername />} />
-        <Route path="/add" element={<AddPlant />} />
-        <Route path="/plant/:id" element={<PlantDetails />} />
-        <Route path="/plant/:id/edit" element={<EditPlant />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/sync-backup" element={<SyncBackup />} />
-      </Route>
+          <Route
+            element={
+              <RequireAuth>
+                <Layout />
+              </RequireAuth>
+            }
+          >
+            <Route path="/" element={<Index />} />
+            <Route path="/set-username" element={<SetUsername />} />
+            <Route path="/add" element={<AddPlant />} />
+            <Route path="/plant/:id" element={<PlantDetails />} />
+            <Route path="/plant/:id/edit" element={<EditPlant />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/sync-backup" element={<SyncBackup />} />
+          </Route>
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </>
   )
 }
 

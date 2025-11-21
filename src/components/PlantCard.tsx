@@ -20,6 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { LazyImage } from '@/components/LazyImage'
+import { memo } from 'react'
 
 interface PlantCardProps {
   plant: Planta
@@ -28,7 +30,7 @@ interface PlantCardProps {
   variant?: 'grid' | 'list' | 'carousel'
 }
 
-export function PlantCard({
+export const PlantCard = memo(function PlantCard({
   plant,
   onClick,
   onDelete,
@@ -76,7 +78,7 @@ export function PlantCard({
       >
         <CardContent className="p-0 h-full flex">
           <div className="w-1/3 h-full relative image-overlay">
-            <img
+            <LazyImage
               src={plant.foto_url}
               alt={plant.apelido}
               className="h-full w-full object-cover"
@@ -125,7 +127,7 @@ export function PlantCard({
       >
         <CardContent className="p-3 flex items-center gap-4">
           <div className="relative h-14 w-14 flex-shrink-0 image-overlay">
-            <img
+            <LazyImage
               src={plant.foto_url}
               alt={plant.apelido}
               className="h-full w-full object-cover rounded-lg border border-border"
@@ -202,7 +204,7 @@ export function PlantCard({
       onClick={() => onClick(plant.id)}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden image-overlay">
-        <img
+        <LazyImage
           src={plant.foto_url}
           alt={plant.apelido}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -268,4 +270,4 @@ export function PlantCard({
       </CardContent>
     </Card>
   )
-}
+})

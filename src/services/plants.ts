@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { Planta, HistoryLogItem } from '@/types'
+import { ActivityService } from './activity'
 
 export const PlantsService = {
   async getPlants(): Promise<Planta[]> {
@@ -72,6 +73,13 @@ export const PlantsService = {
       return null
     }
 
+    // Log Activity
+    await ActivityService.logActivity(
+      'create',
+      `Adicionou a planta ${data.apelido}`,
+      data.id,
+    )
+
     return {
       ...data,
       createdAt: data.created_at,
@@ -100,6 +108,31 @@ export const PlantsService = {
       return null
     }
 
+    // Determine activity type based on updates
+    if (updates.logs && updates.logs.length > 0) {
+      // Assuming the first log is the new one
+      const latestLog = updates.logs[0]
+      let type: any = 'care'
+      if (latestLog.type === 'foto') type = 'refresh'
+      await ActivityService.logActivity(
+        type,
+        latestLog.note || `Atualização de ${latestLog.type}`,
+        id,
+      )
+    } else if (updates.status_saude) {
+      await ActivityService.logActivity(
+        'status_change',
+        `Status alterado para ${updates.status_saude}`,
+        id,
+      )
+    } else {
+      await ActivityService.logActivity(
+        'update',
+        `Editou informações de ${data.apelido}`,
+        id,
+      )
+    }
+
     return {
       ...data,
       createdAt: data.created_at,
@@ -108,11 +141,17 @@ export const PlantsService = {
   },
 
   async deletePlant(id: string): Promise<boolean> {
+    // Get plant name before deleting for log
+    const plant = await this.getPlantById(id)
+    const name = plant?.apelido || 'Planta'
+
     const { error } = await supabase.from('plants').delete().eq('id', id)
     if (error) {
       console.error('Error deleting plant:', error)
       return false
     }
+
+    await ActivityService.logActivity('delete', `Removeu a planta ${name}`, id)
     return true
   },
 

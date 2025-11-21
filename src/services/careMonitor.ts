@@ -3,7 +3,7 @@ import {
   NotificationsService,
   sendNotification,
 } from '@/services/notifications'
-import { NotificationItem, Planta, CareLog } from '@/types'
+import { Planta, CareLog } from '@/types'
 import {
   addDays,
   differenceInDays,
@@ -13,9 +13,9 @@ import {
 } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '@/lib/supabase/client'
+import { ActivityService } from './activity'
 
 export const CareMonitorService = {
-  // This method now generates DB notifications instead of just returning items
   async checkPlantStatus(): Promise<void> {
     const {
       data: { user },
@@ -26,11 +26,10 @@ export const CareMonitorService = {
     const now = new Date()
     const today = startOfDay(now)
 
-    // Fetch existing notifications to avoid duplicates (simple check for today)
     const existingNotifications = await NotificationsService.getNotifications()
     const recentNotifications = existingNotifications.filter((n) => {
       const nDate = parseISO(n.data_hora)
-      return differenceInDays(now, nDate) < 1 // Check last 24h
+      return differenceInDays(now, nDate) < 1
     })
 
     for (const plant of plants) {
@@ -46,7 +45,6 @@ export const CareMonitorService = {
               : `Hora de regar: ${plant.apelido}`
           const type = 'rega'
 
-          // Check duplicate
           const hasDuplicate = recentNotifications.some(
             (n) => n.tipo === type && n.titulo === title,
           )
@@ -58,10 +56,16 @@ export const CareMonitorService = {
               titulo: title,
               mensagem: `Sua ${plant.nome_conhecido} precisa de água.`,
             })
-            // Send Push
             sendNotification(
               title,
               `Sua ${plant.nome_conhecido} precisa de água.`,
+            )
+            // Log alert activity
+            await ActivityService.logActivity(
+              'ia',
+              `Alerta de rega para ${plant.apelido}`,
+              plant.id,
+              'system',
             )
           }
         }
@@ -93,6 +97,12 @@ export const CareMonitorService = {
               title,
               `Sua ${plant.nome_conhecido} precisa de nutrientes.`,
             )
+            await ActivityService.logActivity(
+              'ia',
+              `Alerta de adubação para ${plant.apelido}`,
+              plant.id,
+              'system',
+            )
           }
         }
       }
@@ -117,8 +127,6 @@ export const CareMonitorService = {
     }
   },
 
-  // Legacy method support for Notifications page if needed, but we will switch to DB
-  // Keeping helper methods for actions
   async completeCare(plantId: string, type: string) {
     const plant = await PlantsService.getPlantById(plantId)
     if (!plant) return
@@ -127,7 +135,6 @@ export const CareMonitorService = {
       datas_importantes: { ...plant.datas_importantes },
     }
 
-    // Log completion
     const newLog: CareLog = {
       id: uuidv4(),
       date: new Date().toISOString(),
@@ -139,7 +146,6 @@ export const CareMonitorService = {
     const logs = plant.logs || []
     updates.logs = [newLog, ...logs]
 
-    // Recalculate dates
     if (type === 'rega') {
       const care = plant.cuidados_recomendados.find(
         (c) => c.tipo_cuidado === 'rega',
@@ -160,7 +166,6 @@ export const CareMonitorService = {
       ).toISOString()
     }
 
-    // Update plant
     await PlantsService.updatePlant(plantId, updates)
   },
 

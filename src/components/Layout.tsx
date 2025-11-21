@@ -24,6 +24,7 @@ import { getSyncConfig } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/ui/badge'
+import { LazyImage } from './LazyImage'
 
 export default function Layout() {
   const location = useLocation()
