@@ -30,6 +30,7 @@ const Notifications = lazy(() => import('./pages/Notifications'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const SetUsername = lazy(() => import('./pages/SetUsername'))
 const History = lazy(() => import('./pages/History'))
+const Plants = lazy(() => import('./pages/Plants'))
 
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { session, loading, profile } = useAuth()
@@ -83,6 +84,7 @@ const AppRoutes = () => {
             }
           >
             <Route path="/" element={<Index />} />
+            <Route path="/plants" element={<Plants />} />
             <Route path="/set-username" element={<SetUsername />} />
             <Route path="/add" element={<AddPlant />} />
             <Route path="/plant/:id" element={<PlantDetails />} />

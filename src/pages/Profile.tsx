@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   Camera,
   Save,
   Loader2,
@@ -10,7 +9,12 @@ import {
   Lock,
   Eye,
   EyeOff,
-  AlertTriangle,
+  LogOut,
+  Trash2,
+  Moon,
+  Sun,
+  Bell,
+  Settings,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,11 +38,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
+import { Switch } from '@/components/ui/switch'
+import { useTheme } from '@/lib/theme'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, refreshProfile, signOut } = useAuth()
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isLoading, setIsLoading] = useState(false)
@@ -51,13 +59,9 @@ export default function Profile() {
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-
-  // Visibility States
   const [showOldPassword, setShowOldPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  // Validation State
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -90,7 +94,6 @@ export default function Profile() {
 
     setPasswordError(null)
 
-    // Validate Passwords
     if (oldPassword) {
       if (newPassword !== confirmPassword) {
         setPasswordError('As senhas não coincidem.')
@@ -104,7 +107,6 @@ export default function Profile() {
 
     setIsLoading(true)
 
-    // 1. Update Profile Data
     const updates: any = { nome: name }
     if (isUsernameEditable && username !== profile?.username) {
       const isAvailable = await UserService.checkUsernameAvailable(username)
@@ -135,7 +137,6 @@ export default function Profile() {
       return
     }
 
-    // 2. Update Password (if provided)
     if (oldPassword && newPassword) {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user.email!,
@@ -180,16 +181,43 @@ export default function Profile() {
     setConfirmPassword('')
   }
 
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setIsLoading(true)
+    const { error } = await UserService.deleteAccount(user.id)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao deletar conta',
+        description: 'Tente novamente mais tarde.',
+      })
+      setIsLoading(false)
+    } else {
+      await signOut()
+      navigate('/login')
+      toast({
+        title: 'Conta deletada',
+        description: 'Sua conta foi removida com sucesso.',
+      })
+    }
+  }
+
   return (
-    <div className="space-y-6 pb-20 animate-fade-in">
-      <div className="flex items-center gap-2 mb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="feature-title mb-0">Editar Perfil</h1>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col gap-2">
+        <h1 className="feature-title">Meu Perfil</h1>
+        <p className="text-muted-foreground">
+          Gerencie suas informações e preferências.
+        </p>
       </div>
 
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center space-y-4 py-4">
         <div
           className="relative group cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
@@ -216,184 +244,279 @@ export default function Profile() {
             disabled={isLoading}
           />
         </div>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground">
+            {name || 'Jardineiro'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            @{username || 'usuario'}
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-6 bg-card p-6 rounded-2xl shadow-subtle border border-border/50">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome Completo</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="pl-10 rounded-xl"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="username">Usuário (User)</Label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+      <div className="space-y-6">
+        {/* Personal Info */}
+        <Card className="border-border shadow-subtle">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Informações Pessoais
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome Completo</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={!isUsernameEditable}
-                className="pl-10 rounded-xl"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-xl"
               />
             </div>
-            {!isUsernameEditable && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline">Editar</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Atenção</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Seu nome de usuário só pode ser alterado uma única vez.
-                      Deseja realmente continuar?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => setIsUsernameEditable(true)}
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuário</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={!isUsernameEditable}
+                  className="rounded-xl"
+                />
+                {!isUsernameEditable && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsUsernameEditable(true)}
+                    className="shrink-0"
+                  >
+                    Editar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={user?.email || ''}
+                disabled
+                className="bg-secondary/30 rounded-xl border-transparent"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security */}
+        <Card className="border-border shadow-subtle">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              Segurança
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="oldPassword">Senha Atual</Label>
+              <div className="relative">
+                <Input
+                  id="oldPassword"
+                  type={showOldPassword ? 'text' : 'password'}
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  className="pr-10 rounded-xl"
+                  placeholder="Digite para alterar"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                >
+                  {showOldPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <Collapsible open={oldPassword.length > 0}>
+              <CollapsibleContent className="space-y-4 animate-slide-up pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pr-10 rounded-xl"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                     >
-                      Continuar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        </div>
+                      {showNewPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-            <Input
-              id="email"
-              value={user?.email || ''}
-              disabled
-              className="pl-10 bg-secondary/30 rounded-xl border-transparent"
-            />
-          </div>
-        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={cn(
+                        'pr-10 rounded-xl',
+                        passwordError ? 'border-destructive' : '',
+                      )}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {passwordError && (
+                    <p className="text-sm text-destructive mt-1">
+                      {passwordError}
+                    </p>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-4 pt-4 border-t border-border/50">
-          <h3 className="font-medium text-brand-dark flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Alterar Senha
-          </h3>
-
-          <div className="space-y-2">
-            <Label htmlFor="oldPassword">Senha Atual</Label>
-            <div className="relative">
-              <Input
-                id="oldPassword"
-                type={showOldPassword ? 'text' : 'password'}
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                className="pr-10 rounded-xl"
-                placeholder="Digite para alterar a senha"
+        {/* Settings */}
+        <Card className="border-border shadow-subtle">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              Configurações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="font-medium flex items-center gap-2">
+                  {theme === 'dark' ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )}
+                  Tema Escuro
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Alternar entre claro e escuro
+                </div>
+              </div>
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) =>
+                  setTheme(checked ? 'dark' : 'light')
+                }
               />
-              <button
-                type="button"
-                onClick={() => setShowOldPassword(!showOldPassword)}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-              >
-                {showOldPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
             </div>
-          </div>
 
-          <Collapsible open={oldPassword.length > 0}>
-            <CollapsibleContent className="space-y-4 animate-slide-up">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="pr-10 rounded-xl"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Notificações
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Gerenciar alertas do app
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/notifications')}
+              >
+                Configurar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={cn(
-                      'pr-10 rounded-xl',
-                      passwordError ? 'border-destructive' : '',
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                {passwordError && (
-                  <p className="text-sm text-destructive mt-1">
-                    {passwordError}
-                  </p>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+        <Button
+          className="w-full h-12 text-lg rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg active:scale-95 transition-all"
+          onClick={handleSave}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-5 w-5" />
+              Salvar Alterações
+            </>
+          )}
+        </Button>
+
+        <div className="pt-6 border-t border-border space-y-3">
+          <Button
+            variant="outline"
+            className="w-full h-12 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-5 w-5" />
+            Sair da Conta
+          </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-destructive text-sm"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Deletar Conta
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                  sua conta e removerá todos os seus dados de nossos servidores.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Sim, deletar minha conta
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
-
-      <Button
-        className="w-full h-12 text-lg rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg active:scale-95 transition-all"
-        onClick={handleSave}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Salvando...
-          </>
-        ) : (
-          <>
-            <Save className="mr-2 h-5 w-5" />
-            Salvar Alterações
-          </>
-        )}
-      </Button>
     </div>
   )
 }

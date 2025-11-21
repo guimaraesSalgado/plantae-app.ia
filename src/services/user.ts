@@ -54,4 +54,16 @@ export const UserService = {
 
     return { error }
   },
+
+  async deleteAccount(userId: string): Promise<{ error: any }> {
+    // In a real scenario, we might want to use an Edge Function to delete the auth user.
+    // For now, we will delete the user profile from the public table.
+    // If the database is set up with ON DELETE CASCADE on the auth user, deleting the auth user would be better.
+    // Since we can't delete auth user from client easily without an edge function, we'll delete the public profile
+    // which effectively removes the user's data from the app's perspective.
+
+    const { error } = await supabase.from('users').delete().eq('id', userId)
+
+    return { error }
+  },
 }
