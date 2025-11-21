@@ -11,7 +11,6 @@ import { CloudSyncService } from '@/services/cloudSync'
 import { getSyncConfig } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
-import { Badge } from '@/components/ui/badge'
 
 export default function Layout() {
   const location = useLocation()
@@ -55,12 +54,9 @@ export default function Layout() {
       {/* Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 shadow-sm transition-all duration-300">
         <div className="flex items-center gap-2">
-          {/* Placeholder for left side balance if needed, or logo */}
-          <div className="w-8" />
-        </div>
-
-        <div className="absolute left-1/2 transform -translate-x-1/2 font-display font-bold text-xl text-brand-dark dark:text-foreground tracking-tight">
-          plantae
+          <div className="font-display font-bold text-xl text-brand-dark dark:text-foreground tracking-tight">
+            plantae
+          </div>
         </div>
 
         <div className="flex items-center gap-2">

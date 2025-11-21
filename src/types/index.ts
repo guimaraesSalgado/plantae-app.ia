@@ -40,6 +40,7 @@ export interface Planta {
   nome_cientifico?: string
   foto_url: string
   status_saude: 'saudavel' | 'atencao' | 'critico' | 'desconhecido'
+  sexo?: 'Masculino' | 'Feminino' | 'Hermafrodita' | null
   pontos_positivos: string[]
   pontos_negativos: string[]
   cuidados_recomendados: CuidadoRecomendado[]

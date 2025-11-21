@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { PlantsService } from '@/services/plants'
 import { Planta } from '@/types'
@@ -21,6 +28,7 @@ export default function EditPlant() {
   const [nomeConhecido, setNomeConhecido] = useState('')
   const [nomeCientifico, setNomeCientifico] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [sexo, setSexo] = useState<string>('')
 
   useEffect(() => {
     if (id) {
@@ -31,6 +39,7 @@ export default function EditPlant() {
           setNomeConhecido(foundPlant.nome_conhecido)
           setNomeCientifico(foundPlant.nome_cientifico || '')
           setObservacoes(foundPlant.observacoes || '')
+          setSexo(foundPlant.sexo || '')
         } else {
           navigate('/404')
         }
@@ -48,6 +57,7 @@ export default function EditPlant() {
       nome_conhecido: nomeConhecido,
       nome_cientifico: nomeCientifico,
       observacoes,
+      sexo: sexo as any,
     }
 
     const updatedPlant = await PlantsService.updatePlant(plant.id, updates)
@@ -124,6 +134,20 @@ export default function EditPlant() {
               placeholder="Ex: Epipremnum aureum"
               className="italic"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sexo">Sexo da Planta</Label>
+            <Select value={sexo} onValueChange={setSexo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o sexo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Masculino">Masculino</SelectItem>
+                <SelectItem value="Feminino">Feminino</SelectItem>
+                <SelectItem value="Hermafrodita">Hermafrodita</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

@@ -140,12 +140,12 @@ export default function Index() {
         <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300 animate-fade-in">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Buscar planta..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
+                className="pl-10 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
               />
             </div>
             <ToggleGroup

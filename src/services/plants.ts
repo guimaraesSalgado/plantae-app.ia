@@ -53,6 +53,7 @@ export const PlantsService = {
       nome_cientifico: plant.nome_cientifico,
       foto_url: plant.foto_url,
       status_saude: plant.status_saude,
+      sexo: plant.sexo,
       pontos_positivos: plant.pontos_positivos,
       pontos_negativos: plant.pontos_negativos,
       cuidados_recomendados: plant.cuidados_recomendados,

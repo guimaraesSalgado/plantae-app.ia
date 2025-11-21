@@ -13,6 +13,8 @@ import {
   Edit,
   History,
   Plus,
+  Dna,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +41,7 @@ import { useToast } from '@/hooks/use-toast'
 import { PlantsService } from '@/services/plants'
 import { identifyPlant } from '@/services/plantsAI'
 import { Planta, CareLog } from '@/types'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CareHistory } from '@/components/CareHistory'
 import { v4 as uuidv4 } from 'uuid'
@@ -160,6 +162,20 @@ export default function PlantDetails() {
     }
   }
 
+  const handleSexChange = async (value: string) => {
+    if (!plant) return
+    const updatedPlant = await PlantsService.updatePlant(plant.id, {
+      sexo: value as any,
+    })
+    if (updatedPlant) {
+      setPlant(updatedPlant)
+      toast({
+        title: 'Informação atualizada',
+        description: 'Sexo da planta atualizado.',
+      })
+    }
+  }
+
   if (!plant) return null
 
   const statusColors = {
@@ -168,6 +184,8 @@ export default function PlantDetails() {
     critico: 'bg-red-100 text-red-800 border-red-200',
     desconhecido: 'bg-gray-100 text-gray-800 border-gray-200',
   }
+
+  const daysOfLife = differenceInDays(new Date(), parseISO(plant.createdAt))
 
   return (
     <div className="space-y-6 pb-20 animate-fade-in">
@@ -259,6 +277,46 @@ export default function PlantDetails() {
         </TabsList>
 
         <TabsContent value="details" className="space-y-4 animate-fade-in">
+          {/* Basic Info Card */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="section-title mb-0">
+                Informações Básicas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>Tempo de vida</span>
+                </div>
+                <span className="font-medium">
+                  Aproximadamente {daysOfLife} dias
+                </span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Dna className="h-4 w-4" />
+                  <span>Sexo da planta</span>
+                </div>
+                <Select
+                  value={plant.sexo || ''}
+                  onValueChange={handleSexChange}
+                >
+                  <SelectTrigger className="w-[140px] h-8">
+                    <SelectValue placeholder="Definir" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Feminino">Feminino</SelectItem>
+                    <SelectItem value="Hermafrodita">Hermafrodita</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Observations */}
           {plant.observacoes && (
             <Card>

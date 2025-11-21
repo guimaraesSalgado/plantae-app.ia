@@ -15,6 +15,7 @@ import {
   Sun,
   Bell,
   Settings,
+  BellRing,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -444,13 +445,32 @@ export default function Profile() {
                   Notificações
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Gerenciar alertas do app
+                  Ver histórico de alertas
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/notifications')}
+              >
+                Ver
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="font-medium flex items-center gap-2">
+                  <BellRing className="h-4 w-4" />
+                  Gerenciar Alertas
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Configurar preferências
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/alerts')}
               >
                 Configurar
               </Button>
