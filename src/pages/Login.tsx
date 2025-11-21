@@ -143,26 +143,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Não tem uma conta?{' '}
-                <Link
-                  to="/register"
-                  className="text-primary font-semibold hover:underline"
-                >
-                  Cadastre-se
-                </Link>
-              </p>
-              <p className="text-xs">
-                <Link
-                  to="/register-new-experience"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Experimente o novo cadastro
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

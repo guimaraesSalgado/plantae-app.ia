@@ -25,16 +25,12 @@ const Onboarding = lazy(() => import('./pages/Onboarding'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Splash = lazy(() => import('./pages/Splash'))
 const Login = lazy(() => import('./pages/Login'))
-const Register = lazy(() => import('./pages/Register'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const SetUsername = lazy(() => import('./pages/SetUsername'))
 const History = lazy(() => import('./pages/History'))
 const Plants = lazy(() => import('./pages/Plants'))
-const RegisterNewExperience = lazy(
-  () => import('./pages/RegisterNewExperience'),
-)
 
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { session, loading, profile } = useAuth()
@@ -77,11 +73,6 @@ const AppRoutes = () => {
         <Routes>
           <Route path="/splash" element={<Splash />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/register-new-experience"
-            element={<RegisterNewExperience />}
-          />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/onboarding" element={<Onboarding />} />
 
