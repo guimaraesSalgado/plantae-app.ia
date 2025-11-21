@@ -15,6 +15,7 @@ import NotFound from './pages/NotFound'
 import Splash from './pages/Splash'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
+import Notifications from './pages/Notifications'
 import ScrollToTop from './components/ScrollToTop'
 import { useEffect } from 'react'
 import { hydrateStorage } from './lib/storage'
@@ -51,7 +52,7 @@ const AppRoutes = () => {
         <Route path="/plant/:id" element={<PlantDetails />} />
         <Route path="/plant/:id/edit" element={<EditPlant />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/notifications" element={<Navigate to="/" replace />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/sync-backup" element={<SyncBackup />} />
       </Route>
 

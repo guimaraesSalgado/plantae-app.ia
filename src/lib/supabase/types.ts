@@ -15,7 +15,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      plants: {
+        Row: {
+          apelido: string
+          created_at: string
+          cuidados_recomendados: Json | null
+          datas_importantes: Json | null
+          foto_url: string
+          id: string
+          logs: Json | null
+          nome_cientifico: string | null
+          nome_conhecido: string
+          observacoes: string | null
+          pontos_negativos: string[] | null
+          pontos_positivos: string[] | null
+          status_saude: string | null
+          updated_at: string | null
+          user_id: string
+          vitaminas_e_adubos: Json | null
+        }
+        Insert: {
+          apelido: string
+          created_at?: string
+          cuidados_recomendados?: Json | null
+          datas_importantes?: Json | null
+          foto_url: string
+          id?: string
+          logs?: Json | null
+          nome_cientifico?: string | null
+          nome_conhecido: string
+          observacoes?: string | null
+          pontos_negativos?: string[] | null
+          pontos_positivos?: string[] | null
+          status_saude?: string | null
+          updated_at?: string | null
+          user_id: string
+          vitaminas_e_adubos?: Json | null
+        }
+        Update: {
+          apelido?: string
+          created_at?: string
+          cuidados_recomendados?: Json | null
+          datas_importantes?: Json | null
+          foto_url?: string
+          id?: string
+          logs?: Json | null
+          nome_cientifico?: string | null
+          nome_conhecido?: string
+          observacoes?: string | null
+          pontos_negativos?: string[] | null
+          pontos_positivos?: string[] | null
+          status_saude?: string | null
+          updated_at?: string | null
+          user_id?: string
+          vitaminas_e_adubos?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plants_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      users: {
+        Row: {
+          data_criacao: string
+          email: string
+          foto_perfil_url: string | null
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          data_criacao?: string
+          email: string
+          foto_perfil_url?: string | null
+          id: string
+          nome?: string | null
+        }
+        Update: {
+          data_criacao?: string
+          email?: string
+          foto_perfil_url?: string | null
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

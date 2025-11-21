@@ -8,171 +8,202 @@ import {
   Sprout,
   AlertTriangle,
   Leaf,
+  Trash2,
+  CheckCheck,
+  Scissors,
+  Heart,
+  Bell,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { NotificationItem } from '@/types'
-import { CareMonitorService } from '@/services/careMonitor'
-import { format, isToday, isTomorrow } from 'date-fns'
+import { Notification } from '@/types'
+import { NotificationsService } from '@/services/notifications'
+import { format, isToday, isTomorrow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
 export default function Notifications() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     loadNotifications()
   }, [])
 
   const loadNotifications = async () => {
-    const items = await CareMonitorService.checkPlantStatus()
+    setIsLoading(true)
+    const items = await NotificationsService.getNotifications()
     setNotifications(items)
+    setIsLoading(false)
   }
 
-  const handleComplete = async (item: NotificationItem) => {
-    await CareMonitorService.completeCare(item.plantId, item.type)
-    toast({
-      title: 'Cuidado registrado!',
-      description: `Você cuidou de ${item.plantName}.`,
-      className: 'bg-brand-green text-white border-none',
-    })
-    loadNotifications()
+  const handleMarkAllRead = async () => {
+    const success = await NotificationsService.markAllAsRead()
+    if (success) {
+      setNotifications((prev) => prev.map((n) => ({ ...n, lida: true })))
+      toast({
+        title: 'Tudo lido!',
+        description: 'Todas as notificações foram marcadas como lidas.',
+      })
+    }
   }
 
-  const handleSnooze = async (item: NotificationItem) => {
-    await CareMonitorService.snoozeCare(item.plantId, item.type)
-    toast({
-      title: 'Lembrete adiado',
-      description: 'Vamos te lembrar novamente amanhã.',
-    })
-    loadNotifications()
+  const handleDelete = async (id: string) => {
+    const success = await NotificationsService.deleteNotification(id)
+    if (success) {
+      setNotifications((prev) => prev.filter((n) => n.id !== id))
+      toast({
+        title: 'Removido',
+        description: 'Notificação excluída.',
+      })
+    }
   }
 
-  const formatDate = (date: Date) => {
-    if (isToday(date)) return 'Hoje'
-    if (isTomorrow(date)) return 'Amanhã'
-    return format(date, "dd 'de' MMM", { locale: ptBR })
+  const handleMarkRead = async (id: string) => {
+    const success = await NotificationsService.markAsRead(id)
+    if (success) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, lida: true } : n)),
+      )
+    }
   }
 
-  const getIcon = (type: NotificationItem['type']) => {
+  const formatDate = (dateStr: string) => {
+    const date = parseISO(dateStr)
+    if (isToday(date)) return format(date, "'Hoje às' HH:mm", { locale: ptBR })
+    if (isTomorrow(date))
+      return format(date, "'Amanhã às' HH:mm", { locale: ptBR })
+    return format(date, "dd 'de' MMM 'às' HH:mm", { locale: ptBR })
+  }
+
+  const getIcon = (type: string) => {
     switch (type) {
       case 'rega':
         return <Droplets className="h-5 w-5" />
       case 'adubacao':
-        return <Sprout className="h-5 w-5" />
-      case 'saude':
-        return <AlertTriangle className="h-5 w-5" />
-      case 'inatividade':
-        return <Clock className="h-5 w-5" />
-      default:
         return <Leaf className="h-5 w-5" />
+      case 'poda':
+        return <Scissors className="h-5 w-5" />
+      case 'saude':
+        return <Heart className="h-5 w-5" />
+      case 'alerta':
+        return <AlertTriangle className="h-5 w-5" />
+      default:
+        return <Bell className="h-5 w-5" />
     }
   }
 
-  const getPriorityColor = (priority: NotificationItem['priority']) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-700 border-red-200'
-      case 'medium':
-        return 'bg-amber-100 text-amber-700 border-amber-200'
-      case 'low':
-        return 'bg-brand-light text-brand-earth border-brand-earth/20'
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'rega':
+        return 'bg-blue-100 text-blue-600'
+      case 'adubacao':
+        return 'bg-green-100 text-green-600'
+      case 'saude':
+        return 'bg-red-100 text-red-600'
+      case 'alerta':
+        return 'bg-amber-100 text-amber-600'
+      default:
+        return 'bg-gray-100 text-gray-600'
     }
   }
 
   return (
     <div className="space-y-6 pb-10 animate-fade-in">
-      <div className="flex items-center gap-2 mb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="feature-title mb-0">Alertas e Cuidados</h1>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="feature-title mb-0">Notificações</h1>
+        </div>
+        {notifications.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleMarkAllRead}
+            className="text-primary hover:text-primary/80"
+          >
+            <CheckCheck className="mr-2 h-4 w-4" />
+            Ler todas
+          </Button>
+        )}
       </div>
 
-      {notifications.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
           <div className="bg-brand-light p-6 rounded-full text-brand-green">
             <Check className="w-12 h-12" />
           </div>
-          <h2 className="text-xl font-semibold text-brand-dark">
-            Tudo em dia! 🎉
-          </h2>
+          <h2 className="text-xl font-semibold text-brand-dark">Tudo limpo!</h2>
           <p className="text-muted-foreground max-w-xs">
-            Você está em dia com os cuidados das suas plantas. Aproveite seu
-            jardim!
+            Você não tem novas notificações no momento.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {notifications.map((item) => (
             <Card
               key={item.id}
               className={cn(
-                'border-l-4 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden',
-                item.priority === 'high'
-                  ? 'border-l-brand-dark'
-                  : 'border-l-brand-green',
+                'border-none shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative group active:scale-[0.99]',
+                item.lida
+                  ? 'bg-card opacity-80'
+                  : 'bg-gradient-to-r from-white to-brand-light/30 dark:from-card dark:to-secondary/10',
               )}
+              onClick={() => !item.lida && handleMarkRead(item.id)}
             >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'p-2 rounded-full',
-                        item.type === 'rega'
-                          ? 'bg-blue-100 text-blue-600'
-                          : item.type === 'adubacao'
-                            ? 'bg-green-100 text-green-600'
-                            : item.type === 'saude'
-                              ? 'bg-red-100 text-red-600'
-                              : 'bg-gray-100 text-gray-600',
-                      )}
-                    >
-                      {getIcon(item.type)}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-lg">
-                        {item.description}
-                      </h3>
-                      <p className="text-sm text-muted-foreground font-medium">
-                        {item.plantName}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    className={cn(
-                      'capitalize',
-                      getPriorityColor(item.priority),
-                    )}
-                  >
-                    {formatDate(item.dueDate)}
-                  </Badge>
+              {!item.lida && (
+                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary animate-pulse" />
+              )}
+              <CardContent className="p-4 flex gap-4 items-start">
+                <div
+                  className={cn(
+                    'p-3 rounded-full flex-shrink-0 shadow-sm',
+                    getTypeColor(item.tipo),
+                  )}
+                >
+                  {getIcon(item.tipo)}
                 </div>
 
-                <div className="flex gap-3 mt-4 justify-end border-t border-border pt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSnooze(item)}
-                    className="text-muted-foreground hover:text-foreground"
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className={cn(
+                      'font-semibold text-base leading-tight mb-1',
+                      item.lida ? 'text-muted-foreground' : 'text-foreground',
+                    )}
                   >
-                    <Clock className="mr-2 h-4 w-4" />
-                    Lembrar depois
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleComplete(item)}
-                    className="bg-brand-green hover:bg-brand-dark text-white shadow-sm transition-colors"
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Concluir agora
-                  </Button>
+                    {item.titulo}
+                  </h3>
+                  {item.mensagem && (
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {item.mensagem}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {formatDate(item.data_hora)}
+                  </p>
                 </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(item.id)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </CardContent>
             </Card>
           ))}

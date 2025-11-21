@@ -53,13 +53,32 @@ export interface Planta {
 
 export interface NotificationItem {
   id: string
-  plantId: string
-  plantName: string
-  type: 'rega' | 'adubacao' | 'saude' | 'inatividade' | 'outro'
-  description: string
-  dueDate: Date
+  plantId?: string
+  plantName?: string
+  type:
+    | 'rega'
+    | 'adubacao'
+    | 'saude'
+    | 'inatividade'
+    | 'outro'
+    | 'ia'
+    | 'alerta'
+    | 'geral'
+    | 'poda'
+  description: string // Used for backward compatibility or mapped from message
+  dueDate: Date // Used for backward compatibility or mapped from data_hora
   isOverdue: boolean
   priority: 'high' | 'medium' | 'low'
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  tipo: string
+  titulo: string
+  mensagem: string | null
+  data_hora: string
+  lida: boolean
 }
 
 export interface SyncConfig {

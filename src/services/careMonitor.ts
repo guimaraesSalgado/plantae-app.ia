@@ -1,5 +1,8 @@
 import { PlantsService } from '@/services/plants'
-import { sendNotification } from '@/services/notifications'
+import {
+  NotificationsService,
+  sendNotification,
+} from '@/services/notifications'
 import { NotificationItem, Planta, CareLog } from '@/types'
 import {
   addDays,
@@ -9,36 +12,58 @@ import {
   startOfDay,
 } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
+import { supabase } from '@/lib/supabase/client'
 
 export const CareMonitorService = {
-  async checkPlantStatus(): Promise<NotificationItem[]> {
+  // This method now generates DB notifications instead of just returning items
+  async checkPlantStatus(): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+
     const plants = await PlantsService.getPlants()
-    const notifications: NotificationItem[] = []
     const now = new Date()
     const today = startOfDay(now)
 
-    plants.forEach((plant) => {
+    // Fetch existing notifications to avoid duplicates (simple check for today)
+    const existingNotifications = await NotificationsService.getNotifications()
+    const recentNotifications = existingNotifications.filter((n) => {
+      const nDate = parseISO(n.data_hora)
+      return differenceInDays(now, nDate) < 1 // Check last 24h
+    })
+
+    for (const plant of plants) {
       // 1. Check Watering (Rega)
       if (plant.datas_importantes.proxima_rega_sugerida) {
         const due = parseISO(plant.datas_importantes.proxima_rega_sugerida)
         const daysUntil = differenceInDays(due, today)
 
-        if (daysUntil <= 1) {
-          notifications.push({
-            id: `${plant.id}-rega`,
-            plantId: plant.id,
-            plantName: plant.apelido,
-            type: 'rega',
-            description:
-              daysUntil < 0
-                ? 'Rega atrasada'
-                : daysUntil === 0
-                  ? 'Regar hoje'
-                  : 'Regar amanhã',
-            dueDate: due,
-            isOverdue: daysUntil < 0,
-            priority: daysUntil < 0 ? 'high' : 'medium',
-          })
+        if (daysUntil <= 0) {
+          const title =
+            daysUntil < 0
+              ? `Rega atrasada: ${plant.apelido}`
+              : `Hora de regar: ${plant.apelido}`
+          const type = 'rega'
+
+          // Check duplicate
+          const hasDuplicate = recentNotifications.some(
+            (n) => n.tipo === type && n.titulo === title,
+          )
+
+          if (!hasDuplicate) {
+            await NotificationsService.createNotification({
+              user_id: user.id,
+              tipo: type,
+              titulo: title,
+              mensagem: `Sua ${plant.nome_conhecido} precisa de água.`,
+            })
+            // Send Push
+            sendNotification(
+              title,
+              `Sua ${plant.nome_conhecido} precisa de água.`,
+            )
+          }
         }
       }
 
@@ -47,77 +72,54 @@ export const CareMonitorService = {
         const due = parseISO(plant.datas_importantes.proxima_adubacao_sugerida)
         if (isBefore(due, addDays(now, 1))) {
           const daysUntil = differenceInDays(due, today)
-          notifications.push({
-            id: `${plant.id}-adubacao`,
-            plantId: plant.id,
-            plantName: plant.apelido,
-            type: 'adubacao',
-            description: daysUntil < 0 ? 'Adubação atrasada' : 'Adubar agora',
-            dueDate: due,
-            isOverdue: daysUntil < 0,
-            priority: daysUntil < 0 ? 'high' : 'medium',
-          })
+          const title =
+            daysUntil < 0
+              ? `Adubação atrasada: ${plant.apelido}`
+              : `Hora de adubar: ${plant.apelido}`
+          const type = 'adubacao'
+
+          const hasDuplicate = recentNotifications.some(
+            (n) => n.tipo === type && n.titulo === title,
+          )
+
+          if (!hasDuplicate) {
+            await NotificationsService.createNotification({
+              user_id: user.id,
+              tipo: type,
+              titulo: title,
+              mensagem: `Sua ${plant.nome_conhecido} precisa de nutrientes.`,
+            })
+            sendNotification(
+              title,
+              `Sua ${plant.nome_conhecido} precisa de nutrientes.`,
+            )
+          }
         }
       }
 
-      // 3. Check Critical Health (Saúde Crítica)
+      // 3. Check Critical Health
       if (plant.status_saude === 'critico') {
-        notifications.push({
-          id: `${plant.id}-saude`,
-          plantId: plant.id,
-          plantName: plant.apelido,
-          type: 'saude',
-          description: 'Saúde crítica detectada',
-          dueDate: now,
-          isOverdue: true,
-          priority: 'high',
-        })
-      }
+        const title = `Atenção: ${plant.apelido} está crítica`
+        const type = 'saude'
+        const hasDuplicate = recentNotifications.some(
+          (n) => n.tipo === type && n.titulo === title,
+        )
 
-      // 4. Check Inactivity (Inatividade > 7 days)
-      const lastUpdate = plant.updatedAt || plant.createdAt
-      if (lastUpdate) {
-        const daysInactive = differenceInDays(now, parseISO(lastUpdate))
-        if (daysInactive >= 7) {
-          notifications.push({
-            id: `${plant.id}-inatividade`,
-            plantId: plant.id,
-            plantName: plant.apelido,
-            type: 'inatividade',
-            description: 'Planta sem atualizações recentes',
-            dueDate: now,
-            isOverdue: true,
-            priority: 'low',
+        if (!hasDuplicate) {
+          await NotificationsService.createNotification({
+            user_id: user.id,
+            tipo: type,
+            titulo: title,
+            mensagem: `Verifique a saúde da sua planta.`,
           })
         }
       }
-    })
-
-    return notifications.sort((a, b) => {
-      // Sort by priority then date
-      const priorityScore = { high: 3, medium: 2, low: 1 }
-      if (priorityScore[a.priority] !== priorityScore[b.priority]) {
-        return priorityScore[b.priority] - priorityScore[a.priority]
-      }
-      return a.dueDate.getTime() - b.dueDate.getTime()
-    })
+    }
   },
 
-  async runDailyCheck() {
-    const notifications = await this.checkPlantStatus()
-
-    // Send push notifications for high priority items
-    notifications.forEach((item) => {
-      if (item.priority === 'high' || item.priority === 'medium') {
-        sendNotification(
-          `Sua ${item.plantName} precisa de atenção`,
-          item.description,
-        )
-      }
-    })
-  },
-
-  async completeCare(plantId: string, type: NotificationItem['type']) {
+  // Legacy method support for Notifications page if needed, but we will switch to DB
+  // Keeping helper methods for actions
+  async completeCare(plantId: string, type: string) {
     const plant = await PlantsService.getPlantById(plantId)
     if (!plant) return
 
@@ -131,7 +133,7 @@ export const CareMonitorService = {
       date: new Date().toISOString(),
       type:
         type === 'saude' || type === 'inatividade' ? 'outro' : (type as any),
-      note: `Cuidado realizado via alerta: ${type}`,
+      note: `Cuidado realizado via notificação`,
     }
 
     const logs = plant.logs || []
@@ -162,7 +164,7 @@ export const CareMonitorService = {
     await PlantsService.updatePlant(plantId, updates)
   },
 
-  async snoozeCare(plantId: string, type: NotificationItem['type']) {
+  async snoozeCare(plantId: string, type: string) {
     const plant = await PlantsService.getPlantById(plantId)
     if (!plant) return
 
