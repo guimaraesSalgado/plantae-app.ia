@@ -3,14 +3,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Leaf, Lock, Loader2, Eye, EyeOff, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { UserService } from '@/services/user'
+import { AuthFlowService } from '@/services/auth-flow'
+import { supabase } from '@/lib/supabase/client'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { signInWithEmail } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -23,39 +22,49 @@ export default function Login() {
     e.preventDefault()
     setIsLoading(true)
 
-    let loginEmail = identifier
+    // Use the edge function for login to handle username and temp password check
+    const { data, error } = await AuthFlowService.loginWithUsername(
+      identifier,
+      password,
+    )
 
-    // Check if identifier is email or username
-    if (!identifier.includes('@')) {
-      const fetchedEmail = await UserService.getEmailByUsername(identifier)
-      if (fetchedEmail) {
-        loginEmail = fetchedEmail
-      } else {
-        setIsLoading(false)
-        toast({
-          variant: 'destructive',
-          title: 'Erro ao entrar',
-          description: 'Usuário ou senha inválidos.',
-        })
-        return
-      }
-    }
-
-    const { error } = await signInWithEmail(loginEmail, password)
     setIsLoading(false)
 
     if (error) {
       let message = 'Ocorreu um erro ao fazer login.'
-      if (error.message.includes('Invalid login credentials'))
-        message = 'Usuário ou senha inválidos.'
+      if (error.message) message = error.message
 
       toast({
         variant: 'destructive',
         title: 'Erro ao entrar',
         description: message,
       })
-    } else {
-      navigate('/')
+    } else if (data) {
+      // Set the session in the local supabase client
+      const { error: sessionError } = await supabase.auth.setSession(
+        data.session,
+      )
+
+      if (sessionError) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de sessão',
+          description: 'Não foi possível estabelecer a sessão.',
+        })
+        return
+      }
+
+      // Check if password reset is required
+      if (data.requirePasswordReset) {
+        toast({
+          title: 'Redefinição necessária',
+          description:
+            'Você acessou com uma senha temporária. Defina uma nova senha.',
+        })
+        navigate('/reset-password')
+      } else {
+        navigate('/')
+      }
     }
   }
 

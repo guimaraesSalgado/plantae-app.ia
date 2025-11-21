@@ -109,6 +109,7 @@ export interface UserProfile {
   foto_perfil_url: string | null
   data_criacao: string
   username_change_count?: number
+  is_temporary_password_active?: boolean
 }
 
 export type ActivityType =
