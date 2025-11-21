@@ -19,7 +19,7 @@ export const onRequest = async (req: Request) => {
       return new Response(
         JSON.stringify({ error: 'Nome de usuário e senha são obrigatórios.' }),
         {
-          status: 200, // Return 200 to handle error message in frontend easily
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
@@ -47,7 +47,7 @@ export const onRequest = async (req: Request) => {
         return new Response(
           JSON.stringify({ error: 'Usuário não encontrado.' }),
           {
-            status: 200, // Return 200 to handle error message in frontend easily
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           },
         )
@@ -64,7 +64,7 @@ export const onRequest = async (req: Request) => {
 
     if (authError) {
       return new Response(JSON.stringify({ error: 'Senha incorreta.' }), {
-        status: 200, // Return 200 to handle error message in frontend easily
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
