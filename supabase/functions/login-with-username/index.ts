@@ -17,9 +17,9 @@ export const onRequest = async (req: Request) => {
 
     if (!username || !password) {
       return new Response(
-        JSON.stringify({ error: 'Username and password are required' }),
+        JSON.stringify({ error: 'Nome de usuário e senha são obrigatórios.' }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
@@ -31,34 +31,40 @@ export const onRequest = async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // 1. Find email by username
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('email')
-      .eq('username', username)
-      .single()
+    let emailToSignIn = username
+    // Check if the input looks like an email address
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)
 
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Usuário não encontrado.' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (!isEmail) {
+      // 1. Find email by username if input is not an email
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('email')
+        .eq('username', username)
+        .single()
+
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não encontrado.' }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
+      emailToSignIn = user.email
     }
 
     // 2. Sign in with email and password using the public client context
-    // We use the admin client to sign in to get the session, but we return it to the user
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.signInWithPassword({
-        email: user.email,
+        email: emailToSignIn,
         password: password,
       })
 
     if (authError) {
       return new Response(JSON.stringify({ error: 'Senha incorreta.' }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -67,9 +73,12 @@ export const onRequest = async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: 'Erro interno do servidor.' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   }
 }

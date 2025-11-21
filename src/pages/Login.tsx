@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Leaf, Lock, Loader2, Eye, EyeOff, User } from 'lucide-react'
+import { Leaf, Lock, Eye, EyeOff, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
+import { LoadingOverlay } from '@/components/LoadingOverlay'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { refreshProfile } = useAuth()
+  const { refreshProfile, session } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -19,12 +21,19 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (session) {
+      navigate('/')
+    }
+  }, [session, navigate])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Call Edge Function for Username Login
+      // Call Edge Function for Username/Email Login
       const { data, error } = await supabase.functions.invoke(
         'login-with-username',
         {
@@ -32,11 +41,20 @@ export default function Login() {
         },
       )
 
-      if (error || data?.error) {
-        throw new Error(data?.error || 'Erro ao conectar com o servidor.')
+      // Handle Network/System Errors
+      if (error) {
+        console.error('System Error:', error)
+        throw new Error(
+          'Não foi possível conectar. Verifique sua internet ou tente novamente mais tarde.',
+        )
       }
 
-      // Manually set session if the edge function returns it (it returns auth data)
+      // Handle Logical Errors (User not found, Wrong password) returned by Edge Function
+      if (data?.error) {
+        throw new Error(data.error)
+      }
+
+      // Manually set session if the edge function returns it
       if (data?.session) {
         const { error: sessionError } = await supabase.auth.setSession(
           data.session,
@@ -44,15 +62,22 @@ export default function Login() {
         if (sessionError) throw sessionError
       }
 
-      await refreshProfile()
+      // Refresh profile data
+      if (refreshProfile) {
+        await refreshProfile()
+      }
+
+      // Success - Navigate to home
       navigate('/')
     } catch (error: any) {
+      console.error('Login Error:', error)
       let message =
         'Não foi possível conectar. Verifique sua internet ou tente novamente mais tarde.'
-      if (error.message.includes('Usuário não encontrado'))
-        message = 'Usuário não encontrado.'
-      if (error.message.includes('Senha incorreta'))
-        message = 'Senha incorreta.'
+
+      // Map specific error messages if needed, though Edge Function now returns them directly
+      if (error.message) {
+        message = error.message
+      }
 
       toast({
         variant: 'destructive',
@@ -66,6 +91,8 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
+      <LoadingOverlay isVisible={isLoading} message="Entrando..." />
+
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
       <div
@@ -93,31 +120,44 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="username">Usuário</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <Input
+                    id="username"
                     type="text"
                     placeholder="Nome de usuário"
                     className="pl-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    disabled={isLoading}
+                    autoCapitalize="none"
+                    autoCorrect="off"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <Input
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Sua senha"
                     className="pl-10 pr-10 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background transition-all"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={isLoading}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -138,14 +178,10 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-12 rounded-xl text-base font-medium active:scale-95 transition-transform"
+                className="w-full h-12 rounded-xl text-base font-medium active:scale-95 transition-transform shadow-lg shadow-primary/20"
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <Loader2 className="animate-spin mr-2" />
-                ) : (
-                  'Entrar'
-                )}
+                Entrar
               </Button>
             </form>
 

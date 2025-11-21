@@ -34,7 +34,10 @@ const History = lazy(() => import('./pages/History'))
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const { session, loading, profile } = useAuth()
 
-  if (loading) return null
+  // Show loading overlay instead of null to avoid "stuck" feeling
+  if (loading) {
+    return <LoadingOverlay isVisible={true} message="Verificando acesso..." />
+  }
 
   if (!session) {
     return <Navigate to="/login" replace />
@@ -58,7 +61,7 @@ const AppRoutes = () => {
 
   useEffect(() => {
     setIsNavigating(true)
-    const timer = setTimeout(() => setIsNavigating(false), 300) // Simulate min loading time for smoothness
+    const timer = setTimeout(() => setIsNavigating(false), 500) // Slightly longer for smoothness
     return () => clearTimeout(timer)
   }, [location.pathname])
 

@@ -118,6 +118,58 @@ export type Database = {
           },
         ]
       }
+      user_activities: {
+        Row: {
+          data_hora: string
+          descricao_resumida: string | null
+          id: string
+          origem: string | null
+          planta_id: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          data_hora?: string
+          descricao_resumida?: string | null
+          id?: string
+          origem?: string | null
+          planta_id?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          data_hora?: string
+          descricao_resumida?: string | null
+          id?: string
+          origem?: string | null
+          planta_id?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_activities_planta_id_fkey'
+            columns: ['planta_id']
+            isOneToOne: false
+            referencedRelation: 'plant_logs_view'
+            referencedColumns: ['plant_id']
+          },
+          {
+            foreignKeyName: 'user_activities_planta_id_fkey'
+            columns: ['planta_id']
+            isOneToOne: false
+            referencedRelation: 'plants'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'user_activities_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       users: {
         Row: {
           data_criacao: string
