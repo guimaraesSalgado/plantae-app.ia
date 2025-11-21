@@ -6,12 +6,12 @@ import * as z from 'zod'
 import {
   ArrowLeft,
   Loader2,
-  Check,
   ShieldCheck,
   User,
   Mail,
-  Calendar,
   Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,39 +32,32 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { AuthFlowService } from '@/services/auth-flow'
-import { cn } from '@/lib/utils'
+import { UserService } from '@/services/user'
 
 // Validation Schemas
-const step1Schema = z.object({
-  fullName: z
-    .string()
-    .min(1, 'Por favor, preencha todos os campos obrigatórios.'),
-  username: z.string().min(3, 'O usuário deve ter pelo menos 3 caracteres.'),
-  email: z.string().email('Por favor, insira um e-mail válido.'),
-})
-
-const step2Schema = z
+const step1Schema = z
   .object({
-    dateOfBirth: z
+    fullName: z.string().min(1, 'Preencha todos os campos.'),
+    username: z.string().min(1, 'Preencha todos os campos.'),
+    email: z
       .string()
-      .min(1, 'Por favor, preencha todos os campos obrigatórios.'),
-    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
-    confirmPassword: z
-      .string()
-      .min(1, 'Por favor, preencha todos os campos obrigatórios.'),
+      .min(1, 'Preencha todos os campos.')
+      .email('E-mail em formato inválido.'),
+    password: z.string().min(1, 'Preencha todos os campos.'),
+    confirmPassword: z.string().min(1, 'Preencha todos os campos.'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem.',
     path: ['confirmPassword'],
   })
 
-const step3Schema = z.object({
+const step2Schema = z.object({
   securityQuestion: z
     .string()
-    .min(1, 'Por favor, escolha uma pergunta de segurança.'),
+    .min(1, 'Selecione uma pergunta de segurança e forneça uma resposta.'),
   securityAnswer: z
     .string()
-    .min(1, 'Por favor, digite a resposta para sua pergunta de segurança.'),
+    .min(1, 'Selecione uma pergunta de segurança e forneça uma resposta.'),
 })
 
 export default function Register() {
@@ -73,32 +66,44 @@ export default function Register() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<any>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Forms
   const form1 = useForm({
     resolver: zodResolver(step1Schema),
-    defaultValues: { fullName: '', username: '', email: '' },
+    defaultValues: {
+      fullName: '',
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   })
   const form2 = useForm({
     resolver: zodResolver(step2Schema),
-    defaultValues: { dateOfBirth: '', password: '', confirmPassword: '' },
-  })
-  const form3 = useForm({
-    resolver: zodResolver(step3Schema),
     defaultValues: { securityQuestion: '', securityAnswer: '' },
   })
 
-  const onStep1Submit = (data: any) => {
+  const onStep1Submit = async (data: any) => {
+    setIsLoading(true)
+    // Check username uniqueness
+    const isAvailable = await UserService.checkUsernameAvailable(data.username)
+    setIsLoading(false)
+
+    if (!isAvailable) {
+      form1.setError('username', {
+        type: 'manual',
+        message: 'Este nome de usuário já está em uso.',
+      })
+      return
+    }
+
     setFormData((prev: any) => ({ ...prev, ...data }))
     setStep(2)
   }
 
-  const onStep2Submit = (data: any) => {
-    setFormData((prev: any) => ({ ...prev, ...data }))
-    setStep(3)
-  }
-
-  const onStep3Submit = async (data: any) => {
+  const onStep2Submit = async (data: any) => {
     const finalData = { ...formData, ...data }
     setIsLoading(true)
 
@@ -109,12 +114,14 @@ export default function Register() {
         toast({
           variant: 'destructive',
           title: 'Erro no cadastro',
-          description: error.message || 'Ocorreu um erro inesperado.',
+          description:
+            error.message ||
+            'Não foi possível criar sua conta. Verifique os dados informados e tente novamente.',
         })
       } else {
         toast({
-          title: 'Cadastro concluído!',
-          description: 'Agora você já pode acessar o app.',
+          title: 'Cadastro realizado com sucesso!',
+          description: 'Enviamos um e-mail para você confirmar sua conta.',
           className: 'bg-green-600 text-white border-none',
         })
         navigate('/login')
@@ -124,7 +131,8 @@ export default function Register() {
       toast({
         variant: 'destructive',
         title: 'Erro no cadastro',
-        description: 'Não foi possível completar o cadastro. Tente novamente.',
+        description:
+          'Não foi possível criar sua conta. Verifique os dados informados e tente novamente.',
       })
     } finally {
       setIsLoading(false)
@@ -136,38 +144,31 @@ export default function Register() {
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
 
       <div className="w-full max-w-md z-10 animate-fade-in">
-        {step === 1 && (
-          <Button
-            variant="ghost"
-            className="mb-6 pl-0 hover:bg-transparent hover:text-primary"
-            onClick={() => navigate('/login')}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Login
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          className="mb-6 pl-0 hover:bg-transparent hover:text-primary"
+          onClick={() => (step === 1 ? navigate('/login') : setStep(1))}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {step === 1 ? 'Voltar para Login' : 'Voltar'}
+        </Button>
 
         <Card className="border-none shadow-elevation bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="h-2 bg-secondary w-full">
             <div
               className="h-full bg-primary transition-all duration-500 ease-in-out"
-              style={{ width: `${(step / 3) * 100}%` }}
+              style={{ width: `${(step / 2) * 100}%` }}
             />
           </div>
 
           <CardHeader>
             <CardTitle className="text-2xl font-display font-bold text-center">
-              {step === 1 && 'Bem-vindo(a) ao Guia das Plantas!'}
-              {step === 2 && 'Quase lá! Agora, crie sua senha.'}
-              {step === 3 && 'Proteja sua conta!'}
+              {step === 1 ? 'Crie sua conta' : 'Proteja sua conta'}
             </CardTitle>
             <CardDescription className="text-center">
-              {step === 1 &&
-                'Para começar, precisamos de algumas informações básicas.'}
-              {step === 2 &&
-                'Sua senha deve ser segura e fácil de lembrar para você.'}
-              {step === 3 &&
-                'Escolha uma pergunta de segurança para recuperar sua senha facilmente no futuro.'}
+              {step === 1
+                ? 'Preencha seus dados para começar.'
+                : 'Escolha uma pergunta de segurança para recuperar sua senha.'}
             </CardDescription>
           </CardHeader>
 
@@ -196,7 +197,7 @@ export default function Register() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="username">User</Label>
+                  <Label htmlFor="username">Usuário</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
@@ -232,50 +233,32 @@ export default function Register() {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full h-12 rounded-xl mt-4">
-                  Continuar
-                </Button>
-              </form>
-            )}
-
-            {step === 2 && (
-              <form
-                onSubmit={form2.handleSubmit(onStep2Submit)}
-                className="space-y-4 animate-slide-up"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Data de nascimento</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      className="pl-10 rounded-xl"
-                      {...form2.register('dateOfBirth')}
-                    />
-                  </div>
-                  {form2.formState.errors.dateOfBirth && (
-                    <p className="text-xs text-destructive">
-                      {form2.formState.errors.dateOfBirth.message as string}
-                    </p>
-                  )}
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="******"
-                      className="pl-10 rounded-xl"
-                      {...form2.register('password')}
+                      className="pl-10 pr-10 rounded-xl"
+                      {...form1.register('password')}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
-                  {form2.formState.errors.password && (
+                  {form1.formState.errors.password && (
                     <p className="text-xs text-destructive">
-                      {form2.formState.errors.password.message as string}
+                      {form1.formState.errors.password.message as string}
                     </p>
                   )}
                 </div>
@@ -286,38 +269,49 @@ export default function Register() {
                     <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="******"
-                      className="pl-10 rounded-xl"
-                      {...form2.register('confirmPassword')}
+                      className="pl-10 pr-10 rounded-xl"
+                      {...form1.register('confirmPassword')}
                     />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
-                  {form2.formState.errors.confirmPassword && (
+                  {form1.formState.errors.confirmPassword && (
                     <p className="text-xs text-destructive">
-                      {form2.formState.errors.confirmPassword.message as string}
+                      {form1.formState.errors.confirmPassword.message as string}
                     </p>
                   )}
                 </div>
 
-                <div className="flex gap-3 mt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 h-12 rounded-xl"
-                    onClick={() => setStep(1)}
-                  >
-                    Voltar
-                  </Button>
-                  <Button type="submit" className="flex-[2] h-12 rounded-xl">
-                    Concluir
-                  </Button>
-                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl mt-4"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    'Continuar'
+                  )}
+                </Button>
               </form>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <form
-                onSubmit={form3.handleSubmit(onStep3Submit)}
+                onSubmit={form2.handleSubmit(onStep2Submit)}
                 className="space-y-6 animate-slide-up"
               >
                 <div className="flex justify-center mb-4">
@@ -330,7 +324,7 @@ export default function Register() {
                   <Label>Pergunta de Segurança</Label>
                   <Select
                     onValueChange={(val) =>
-                      form3.setValue('securityQuestion', val)
+                      form2.setValue('securityQuestion', val)
                     }
                   >
                     <SelectTrigger className="h-12 rounded-xl">
@@ -348,10 +342,10 @@ export default function Register() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  {form3.formState.errors.securityQuestion && (
+                  {form2.formState.errors.securityQuestion && (
                     <p className="text-xs text-destructive">
                       {
-                        form3.formState.errors.securityQuestion
+                        form2.formState.errors.securityQuestion
                           .message as string
                       }
                     </p>
@@ -364,11 +358,11 @@ export default function Register() {
                     id="securityAnswer"
                     placeholder="Digite sua resposta"
                     className="h-12 rounded-xl"
-                    {...form3.register('securityAnswer')}
+                    {...form2.register('securityAnswer')}
                   />
-                  {form3.formState.errors.securityAnswer && (
+                  {form2.formState.errors.securityAnswer && (
                     <p className="text-xs text-destructive">
-                      {form3.formState.errors.securityAnswer.message as string}
+                      {form2.formState.errors.securityAnswer.message as string}
                     </p>
                   )}
                 </div>
@@ -381,7 +375,7 @@ export default function Register() {
                   {isLoading ? (
                     <Loader2 className="animate-spin mr-2" />
                   ) : (
-                    'Salvar Pergunta de Segurança'
+                    'Criar Conta'
                   )}
                 </Button>
               </form>

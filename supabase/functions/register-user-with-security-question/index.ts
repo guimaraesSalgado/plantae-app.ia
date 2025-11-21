@@ -34,7 +34,7 @@ export const onRequest = async (req: Request) => {
     if (existingUser) {
       return new Response(
         JSON.stringify({
-          error: 'Este user já está em uso. Por favor, escolha outro.',
+          error: 'Este nome de usuário já está em uso.',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -64,13 +64,13 @@ export const onRequest = async (req: Request) => {
 
     const userId = authData.user.id
 
-    // 3. Update public.users with username, dob and explicitly set username_change_count to 0
+    // 3. Update public.users with username, dob and explicitly set username_change_count to 1
     const { error: updateError, count } = await supabase
       .from('users')
       .update({
         username,
-        data_nascimento: dateOfBirth,
-        username_change_count: 0,
+        data_nascimento: dateOfBirth || null,
+        username_change_count: 1, // Initialized to 1 as per User Story
       })
       .eq('id', userId)
       .select('id', { count: 'exact' })
@@ -94,8 +94,8 @@ export const onRequest = async (req: Request) => {
         email,
         nome: fullName,
         username,
-        data_nascimento: dateOfBirth,
-        username_change_count: 0,
+        data_nascimento: dateOfBirth || null,
+        username_change_count: 1, // Initialized to 1 as per User Story
       })
 
       if (insertError) {

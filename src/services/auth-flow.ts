@@ -4,10 +4,10 @@ export interface RegisterData {
   fullName: string
   username: string
   email: string
-  dateOfBirth: string
   password: string
   securityQuestion: string
   securityAnswer: string
+  dateOfBirth?: string // Optional now
 }
 
 export const AuthFlowService = {
