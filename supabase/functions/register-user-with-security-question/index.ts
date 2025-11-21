@@ -64,14 +64,13 @@ export const onRequest = async (req: Request) => {
 
     const userId = authData.user.id
 
-    // 3. Update public.users with username and dob
-    // We use select to check if the update actually affected any rows.
-    // If the trigger failed or hasn't run yet, count will be 0.
+    // 3. Update public.users with username, dob and explicitly set username_change_count to 0
     const { error: updateError, count } = await supabase
       .from('users')
       .update({
         username,
         data_nascimento: dateOfBirth,
+        username_change_count: 0,
       })
       .eq('id', userId)
       .select('id', { count: 'exact' })
@@ -96,6 +95,7 @@ export const onRequest = async (req: Request) => {
         nome: fullName,
         username,
         data_nascimento: dateOfBirth,
+        username_change_count: 0,
       })
 
       if (insertError) {

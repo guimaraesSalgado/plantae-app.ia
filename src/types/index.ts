@@ -98,6 +98,7 @@ export interface UserProfile {
   username: string | null
   foto_perfil_url: string | null
   data_criacao: string
+  username_change_count?: number
 }
 
 export type ActivityType =

@@ -52,6 +52,7 @@ export default function Profile() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [usernameChangeCount, setUsernameChangeCount] = useState(0)
 
   // Password States
   const [oldPassword, setOldPassword] = useState('')
@@ -63,12 +64,19 @@ export default function Profile() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (profile) {
-      setName(profile.nome || '')
-      setUsername(profile.username || '')
-      setAvatarUrl(profile.foto_perfil_url)
+    const loadProfileData = async () => {
+      if (user) {
+        const fullProfile = await UserService.getProfile(user.id)
+        if (fullProfile) {
+          setName(fullProfile.nome || '')
+          setUsername(fullProfile.username || '')
+          setAvatarUrl(fullProfile.foto_perfil_url)
+          setUsernameChangeCount(fullProfile.username_change_count || 0)
+        }
+      }
     }
-  }, [profile])
+    loadProfileData()
+  }, [user, profile])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -105,8 +113,8 @@ export default function Profile() {
 
     setIsLoading(true)
 
+    // 1. Update Name
     const updates: any = { nome: name }
-
     const { error: profileError } = await UserService.updateProfile(
       user.id,
       updates,
@@ -122,6 +130,32 @@ export default function Profile() {
       return
     }
 
+    // 2. Update Username (if changed)
+    if (username !== profile?.username) {
+      if (usernameChangeCount >= 2) {
+        toast({
+          variant: 'destructive',
+          title: 'Limite atingido',
+          description:
+            'Você já alterou seu nome de usuário duas vezes. Não é mais possível modificá-lo.',
+        })
+        // Revert username in UI
+        setUsername(profile?.username || '')
+      } else {
+        const result = await UserService.updateUsername(username)
+        if (!result.success) {
+          setIsLoading(false)
+          toast({
+            variant: 'destructive',
+            title: 'Erro ao atualizar usuário',
+            description: result.message || 'Erro desconhecido',
+          })
+          return
+        }
+      }
+    }
+
+    // 3. Update Password
     if (oldPassword && newPassword) {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user.email!,
@@ -154,6 +188,11 @@ export default function Profile() {
 
     setIsLoading(false)
     await refreshProfile()
+    // Reload local state to get new count
+    const updatedProfile = await UserService.getProfile(user.id)
+    if (updatedProfile) {
+      setUsernameChangeCount(updatedProfile.username_change_count || 0)
+    }
 
     toast({
       title: 'Perfil atualizado com sucesso!',
@@ -263,11 +302,19 @@ export default function Profile() {
               <Input
                 id="username"
                 value={username}
-                disabled
-                className="rounded-xl bg-secondary/30 border-transparent"
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={usernameChangeCount >= 2}
+                className={cn(
+                  'rounded-xl border-transparent',
+                  usernameChangeCount >= 2
+                    ? 'bg-secondary/30'
+                    : 'bg-background border-input',
+                )}
               />
               <p className="text-xs text-muted-foreground">
-                Seu nome de usuário é permanente.
+                {usernameChangeCount >= 2
+                  ? 'Você já atingiu o limite permitido de alterações.'
+                  : 'Você pode alterar seu nome de usuário apenas duas vezes.'}
               </p>
             </div>
 
