@@ -17,9 +17,9 @@ export const onRequest = async (req: Request) => {
 
     if (!username || !password) {
       return new Response(
-        JSON.stringify({ error: 'Username and password are required' }),
+        JSON.stringify({ error: 'Nome de usuário e senha são obrigatórios.' }),
         {
-          status: 400,
+          status: 200, // Return 200 to handle error message in frontend easily
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
@@ -47,7 +47,7 @@ export const onRequest = async (req: Request) => {
         return new Response(
           JSON.stringify({ error: 'Usuário não encontrado.' }),
           {
-            status: 404,
+            status: 200, // Return 200 to handle error message in frontend easily
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           },
         )
@@ -64,7 +64,7 @@ export const onRequest = async (req: Request) => {
 
     if (authError) {
       return new Response(JSON.stringify({ error: 'Senha incorreta.' }), {
-        status: 401,
+        status: 200, // Return 200 to handle error message in frontend easily
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -73,9 +73,12 @@ export const onRequest = async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: 'Erro interno do servidor.' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   }
 }
