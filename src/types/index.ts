@@ -51,6 +51,9 @@ export interface Planta {
   observacoes?: string
   createdAt: string
   updatedAt?: string
+  // New columns
+  proxima_data_rega?: string | null
+  ultima_analise?: string | null
 }
 
 export interface NotificationItem {
@@ -67,6 +70,8 @@ export interface NotificationItem {
     | 'alerta'
     | 'geral'
     | 'poda'
+    | 'parabens'
+    | 'problema'
   description: string
   dueDate: Date
   isOverdue: boolean
@@ -76,11 +81,16 @@ export interface NotificationItem {
 export interface AppNotification {
   id: string
   user_id: string
+  plant_id?: string | null
   tipo: string
   titulo: string
   mensagem: string | null
   data_hora: string
   lida: boolean
+  plants?: {
+    apelido: string
+    foto_url: string
+  }
 }
 
 export interface SyncConfig {

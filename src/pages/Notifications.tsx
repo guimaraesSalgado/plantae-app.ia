@@ -12,6 +12,8 @@ import {
   Scissors,
   Heart,
   Bell,
+  Sprout,
+  AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,6 +23,7 @@ import { NotificationsService } from '@/services/notifications'
 import { format, isToday, isTomorrow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { LazyImage } from '@/components/LazyImage'
 
 export default function Notifications() {
   const navigate = useNavigate()
@@ -70,6 +73,15 @@ export default function Notifications() {
     }
   }
 
+  const handleNotificationClick = (notification: AppNotification) => {
+    if (!notification.lida) {
+      handleMarkRead(notification.id)
+    }
+    if (notification.plant_id) {
+      navigate(`/plant/${notification.plant_id}`)
+    }
+  }
+
   const formatDate = (dateStr: string) => {
     const date = parseISO(dateStr)
     if (isToday(date)) return format(date, "'Hoje às' HH:mm", { locale: ptBR })
@@ -89,7 +101,10 @@ export default function Notifications() {
       case 'saude':
         return <Heart className="h-5 w-5" />
       case 'alerta':
+      case 'problema':
         return <AlertTriangle className="h-5 w-5" />
+      case 'parabens':
+        return <Sprout className="h-5 w-5" />
       default:
         return <Bell className="h-5 w-5" />
     }
@@ -104,7 +119,10 @@ export default function Notifications() {
       case 'saude':
         return 'bg-red-100 text-red-600'
       case 'alerta':
+      case 'problema':
         return 'bg-amber-100 text-amber-600'
+      case 'parabens':
+        return 'bg-emerald-100 text-emerald-600'
       default:
         return 'bg-gray-100 text-gray-600'
     }
@@ -152,12 +170,12 @@ export default function Notifications() {
             <Card
               key={item.id}
               className={cn(
-                'border-none shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative group active:scale-[0.99]',
+                'border-none shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative group active:scale-[0.99] cursor-pointer',
                 item.lida
                   ? 'bg-card opacity-80'
                   : 'bg-gradient-to-r from-white to-brand-light/30 dark:from-card dark:to-secondary/10',
               )}
-              onClick={() => !item.lida && handleMarkRead(item.id)}
+              onClick={() => handleNotificationClick(item)}
             >
               {!item.lida && (
                 <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -186,16 +204,32 @@ export default function Notifications() {
                       {item.mensagem}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDate(item.data_hora)}
-                  </p>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(item.data_hora)}
+                    </p>
+
+                    {item.plants && (
+                      <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-full">
+                        <LazyImage
+                          src={item.plants.foto_url}
+                          alt={item.plants.apelido}
+                          className="w-4 h-4 rounded-full object-cover"
+                        />
+                        <span className="text-[10px] font-medium text-muted-foreground truncate max-w-[80px]">
+                          {item.plants.apelido}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleDelete(item.id)

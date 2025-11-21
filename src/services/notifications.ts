@@ -36,7 +36,7 @@ export const NotificationsService = {
   async getNotifications(): Promise<AppNotification[]> {
     const { data, error } = await supabase
       .from('notifications')
-      .select('*')
+      .select('*, plants(apelido, foto_url)')
       .order('data_hora', { ascending: false })
 
     if (error) {

@@ -111,6 +111,11 @@ export default function AddPlant() {
         vitaminas_e_adubos: analysisResult.vitaminas_e_adubos || [],
         datas_importantes: analysisResult.datas_importantes || {},
         logs: [],
+        // Initialize new columns
+        proxima_data_rega:
+          analysisResult.datas_importantes?.proxima_rega_sugerida || null,
+        ultima_analise:
+          analysisResult.datas_importantes?.ultima_analise || null,
       }
 
       const savedPlant = await PlantsService.createPlant(newPlant)

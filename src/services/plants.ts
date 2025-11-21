@@ -46,6 +46,11 @@ export const PlantsService = {
     const { data: sessionData } = await supabase.auth.getSession()
     if (!sessionData.session?.user) throw new Error('User not authenticated')
 
+    // Sync JSONB dates to columns
+    const proxima_data_rega =
+      plant.datas_importantes?.proxima_rega_sugerida || null
+    const ultima_analise = plant.datas_importantes?.ultima_analise || null
+
     const dbPlant = {
       user_id: sessionData.session.user.id,
       apelido: plant.apelido,
@@ -62,6 +67,8 @@ export const PlantsService = {
       datas_importantes: plant.datas_importantes,
       logs: plant.logs,
       observacoes: plant.observacoes,
+      proxima_data_rega,
+      ultima_analise,
     }
 
     const { data, error } = await supabase
@@ -97,6 +104,23 @@ export const PlantsService = {
     if (updates.createdAt) delete dbUpdates.createdAt
     if (updates.updatedAt) delete dbUpdates.updatedAt
     dbUpdates.updated_at = new Date().toISOString()
+
+    // Sync JSONB dates to columns if datas_importantes is being updated
+    if (updates.datas_importantes) {
+      if (updates.datas_importantes.proxima_rega_sugerida) {
+        dbUpdates.proxima_data_rega =
+          updates.datas_importantes.proxima_rega_sugerida
+      }
+      if (updates.datas_importantes.ultima_analise) {
+        dbUpdates.ultima_analise = updates.datas_importantes.ultima_analise
+      }
+    }
+
+    // Also allow direct updates to columns if passed
+    if (updates.proxima_data_rega)
+      dbUpdates.proxima_data_rega = updates.proxima_data_rega
+    if (updates.ultima_analise)
+      dbUpdates.ultima_analise = updates.ultima_analise
 
     const { data, error } = await supabase
       .from('plants')

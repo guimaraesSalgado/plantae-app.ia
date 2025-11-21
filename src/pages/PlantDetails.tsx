@@ -43,7 +43,7 @@ import { useToast } from '@/hooks/use-toast'
 import { PlantsService } from '@/services/plants'
 import { identifyPlant } from '@/services/plantsAI'
 import { Planta, CareLog } from '@/types'
-import { format, parseISO, differenceInDays } from 'date-fns'
+import { format, parseISO, differenceInDays, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CareHistory } from '@/components/CareHistory'
 import { v4 as uuidv4 } from 'uuid'
@@ -115,6 +115,8 @@ export default function PlantDetails() {
               ultima_analise: new Date().toISOString(),
               ...result.datas_importantes,
             },
+            // Update columns
+            ultima_analise: new Date().toISOString(),
           }
 
           // Add log for photo update
@@ -167,10 +169,26 @@ export default function PlantDetails() {
       note: newLogNote,
     }
 
-    const updatedLogs = [log, ...(plant.logs || [])]
-    const updatedPlant = await PlantsService.updatePlant(plant.id, {
-      logs: updatedLogs,
-    })
+    const updates: Partial<Planta> = {
+      logs: [log, ...(plant.logs || [])],
+    }
+
+    // If watering, update next watering date
+    if (newLogType === 'rega') {
+      const care = plant.cuidados_recomendados.find(
+        (c) => c.tipo_cuidado === 'rega',
+      )
+      const interval = care?.intervalo_dias || 3
+      const nextDate = addDays(new Date(), interval).toISOString()
+
+      updates.datas_importantes = {
+        ...plant.datas_importantes,
+        proxima_rega_sugerida: nextDate,
+      }
+      updates.proxima_data_rega = nextDate
+    }
+
+    const updatedPlant = await PlantsService.updatePlant(plant.id, updates)
 
     if (updatedPlant) {
       setPlant(updatedPlant)
@@ -306,14 +324,12 @@ export default function PlantDetails() {
         >
           Status: {plant.status_saude}
         </Badge>
-        {plant.datas_importantes.ultima_analise && (
+        {plant.ultima_analise && (
           <span className="text-xs text-muted-foreground">
             Atualizado em{' '}
-            {format(
-              parseISO(plant.datas_importantes.ultima_analise),
-              "dd 'de' MMM",
-              { locale: ptBR },
-            )}
+            {format(parseISO(plant.ultima_analise), "dd 'de' MMM", {
+              locale: ptBR,
+            })}
           </span>
         )}
       </div>
