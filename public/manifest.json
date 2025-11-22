@@ -1,0 +1,22 @@
+{
+  "name": "Plantae",
+  "short_name": "Plantae",
+  "description": "Seu assistente pessoal para cuidar do seu jardim com inteligência e carinho.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#065f46",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://img.usecurling.com/i?q=leaf&color=green&shape=fill",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.usecurling.com/i?q=leaf&color=green&shape=fill",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -3,11 +3,19 @@ import { Planta, HistoryLogItem } from '@/types'
 import { ActivityService } from './activity'
 
 export const PlantsService = {
-  async getPlants(): Promise<Planta[]> {
-    const { data, error } = await supabase
+  async getPlants(page?: number, limit: number = 20): Promise<Planta[]> {
+    let query = supabase
       .from('plants')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (page !== undefined) {
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+      query = query.range(from, to)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching plants:', error)

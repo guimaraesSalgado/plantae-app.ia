@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  Sprout,
   Calendar,
   Edit,
   History,
@@ -17,6 +16,8 @@ import {
   Clock,
   Hourglass,
   Save,
+  Sprout,
+  CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -49,12 +50,14 @@ import { CareHistory } from '@/components/CareHistory'
 import { v4 as uuidv4 } from 'uuid'
 import { ScanningEffect } from '@/components/ScanningEffect'
 import { cn } from '@/lib/utils'
+import { PlantDetailsSkeleton } from '@/components/Skeletons'
 
 export default function PlantDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [plant, setPlant] = useState<Planta | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -69,18 +72,21 @@ export default function PlantDetails() {
 
   useEffect(() => {
     if (id) {
-      PlantsService.getPlantById(id).then((foundPlant) => {
-        if (foundPlant) {
-          setPlant(foundPlant)
-          setLifespan(
-            foundPlant.tempo_de_vida_aproximado_dias
-              ? foundPlant.tempo_de_vida_aproximado_dias.toString()
-              : '',
-          )
-        } else {
-          navigate('/404')
-        }
-      })
+      setIsLoading(true)
+      PlantsService.getPlantById(id)
+        .then((foundPlant) => {
+          if (foundPlant) {
+            setPlant(foundPlant)
+            setLifespan(
+              foundPlant.tempo_de_vida_aproximado_dias
+                ? foundPlant.tempo_de_vida_aproximado_dias.toString()
+                : '',
+            )
+          } else {
+            navigate('/404')
+          }
+        })
+        .finally(() => setIsLoading(false))
     }
   }, [id, navigate])
 
@@ -115,11 +121,9 @@ export default function PlantDetails() {
               ultima_analise: new Date().toISOString(),
               ...result.datas_importantes,
             },
-            // Update columns
             ultima_analise: new Date().toISOString(),
           }
 
-          // Add log for photo update
           const log: CareLog = {
             id: uuidv4(),
             date: new Date().toISOString(),
@@ -173,7 +177,6 @@ export default function PlantDetails() {
       logs: [log, ...(plant.logs || [])],
     }
 
-    // If watering, update next watering date
     if (newLogType === 'rega') {
       const care = plant.cuidados_recomendados.find(
         (c) => c.tipo_cuidado === 'rega',
@@ -241,6 +244,14 @@ export default function PlantDetails() {
         description: 'Tempo de vida aproximado salvo.',
       })
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="pb-20">
+        <PlantDetailsSkeleton />
+      </div>
+    )
   }
 
   if (!plant) return null
@@ -465,7 +476,7 @@ export default function PlantDetails() {
             <Card className="border-l-4 border-l-green-500">
               <CardHeader className="pb-2">
                 <CardTitle className="section-title mb-0 text-green-700 dark:text-green-500">
-                  <CheckCircle className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" />
                   Sinais de Saúde
                 </CardTitle>
               </CardHeader>

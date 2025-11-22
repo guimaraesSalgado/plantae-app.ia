@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
+import { Search, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PlantCard } from '@/components/PlantCard'
 import { AttentionCarousel } from '@/components/AttentionCarousel'
@@ -18,6 +18,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
+import { PlantCardSkeleton } from '@/components/Skeletons'
 
 const ITEMS_PER_PAGE = 10
 
@@ -35,6 +36,8 @@ export default function Index() {
   const loadPlants = useCallback(async () => {
     setIsLoading(true)
     try {
+      // Fetch all for client-side filtering/pagination as per current logic
+      // Optimization: In a real large app, we would filter on backend
       const data = await PlantsService.getPlants()
       setPlants(data)
     } catch (error) {
@@ -129,163 +132,173 @@ export default function Index() {
         </p>
       </div>
 
-      {attentionPlants.length > 0 && (
-        <AttentionCarousel
-          plants={attentionPlants}
-          onPlantClick={handlePlantClick}
-        />
-      )}
-
-      {plants.length > 0 && (
-        <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300 animate-fade-in">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar planta..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
-              />
-            </div>
-            <ToggleGroup
-              type="single"
-              value={viewMode}
-              onValueChange={handleViewModeChange}
-              className="bg-secondary/30 p-1 rounded-xl border border-transparent"
-            >
-              <ToggleGroupItem
-                value="grid"
-                aria-label="Grid view"
-                className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="list"
-                aria-label="List view"
-                className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
-              >
-                <ListIcon className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {filterTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setStatusFilter(tag)}
-                className={cn(
-                  'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border',
-                  statusFilter === tag
-                    ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                    : 'bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
-                )}
-              >
-                {tag}
-              </button>
+      {isLoading ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <PlantCardSkeleton key={i} />
             ))}
           </div>
         </div>
-      )}
+      ) : (
+        <>
+          {attentionPlants.length > 0 && (
+            <AttentionCarousel
+              plants={attentionPlants}
+              onPlantClick={handlePlantClick}
+            />
+          )}
 
-      <div className="min-h-[300px]">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : plants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
-            <div className="bg-secondary/50 p-6 rounded-full">
-              <img
-                src="https://img.usecurling.com/i?q=potted%20plant&color=green&shape=lineal-color"
-                alt="Empty State"
-                className="w-24 h-24 opacity-80"
-              />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground">
-              Nenhuma planta cadastrada
-            </h2>
-            <p className="text-muted-foreground max-w-xs">
-              Adicione sua primeira planta através do menu lateral.
-            </p>
-          </div>
-        ) : filteredPlants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
-            <div className="bg-secondary/50 p-6 rounded-full">
-              <Search className="w-12 h-12 text-muted-foreground opacity-50" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground">
-              Nenhuma planta encontrada
-            </h2>
-            <p className="text-muted-foreground max-w-xs">
-              Tente ajustar seus filtros de busca.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6 animate-slide-up">
-            <div
-              className={cn(
-                'grid gap-4',
-                viewMode === 'grid'
-                  ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-                  : 'grid-cols-1',
-              )}
-            >
-              {paginatedPlants.map((plant) => (
-                <PlantCard
-                  key={plant.id}
-                  plant={plant}
-                  onClick={handlePlantClick}
-                  onDelete={handleDeletePlant}
-                  variant={viewMode}
-                />
-              ))}
-            </div>
+          {plants.length > 0 && (
+            <div className="space-y-4 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/40 transition-all duration-300 animate-fade-in">
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar planta..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 rounded-xl bg-secondary/30 border-transparent focus:bg-background focus:border-primary/50 transition-all"
+                  />
+                </div>
+                <ToggleGroup
+                  type="single"
+                  value={viewMode}
+                  onValueChange={handleViewModeChange}
+                  className="bg-secondary/30 p-1 rounded-xl border border-transparent"
+                >
+                  <ToggleGroupItem
+                    value="grid"
+                    aria-label="Grid view"
+                    className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="list"
+                    aria-label="List view"
+                    className="rounded-lg data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                  >
+                    <ListIcon className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
 
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className={
-                        currentPage === 1
-                          ? 'pointer-events-none opacity-50'
-                          : 'cursor-pointer'
-                      }
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {filterTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setStatusFilter(tag)}
+                    className={cn(
+                      'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border',
+                      statusFilter === tag
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                        : 'bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-primary',
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="min-h-[300px]">
+            {plants.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
+                <div className="bg-secondary/50 p-6 rounded-full">
+                  <img
+                    src="https://img.usecurling.com/i?q=potted%20plant&color=green&shape=lineal-color"
+                    alt="Empty State"
+                    className="w-24 h-24 opacity-80"
+                  />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Nenhuma planta cadastrada
+                </h2>
+                <p className="text-muted-foreground max-w-xs">
+                  Adicione sua primeira planta através do menu lateral.
+                </p>
+              </div>
+            ) : filteredPlants.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
+                <div className="bg-secondary/50 p-6 rounded-full">
+                  <Search className="w-12 h-12 text-muted-foreground opacity-50" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Nenhuma planta encontrada
+                </h2>
+                <p className="text-muted-foreground max-w-xs">
+                  Tente ajustar seus filtros de busca.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6 animate-slide-up">
+                <div
+                  className={cn(
+                    'grid gap-4',
+                    viewMode === 'grid'
+                      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                      : 'grid-cols-1',
+                  )}
+                >
+                  {paginatedPlants.map((plant) => (
+                    <PlantCard
+                      key={plant.id}
+                      plant={plant}
+                      onClick={handlePlantClick}
+                      onDelete={handleDeletePlant}
+                      variant={viewMode}
                     />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        isActive={currentPage === i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className="cursor-pointer"
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
                   ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      className={
-                        currentPage === totalPages
-                          ? 'pointer-events-none opacity-50'
-                          : 'cursor-pointer'
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+                </div>
+
+                {totalPages > 1 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(1, p - 1))
+                          }
+                          className={
+                            currentPage === 1
+                              ? 'pointer-events-none opacity-50'
+                              : 'cursor-pointer'
+                          }
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            isActive={currentPage === i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className="cursor-pointer"
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(totalPages, p + 1))
+                          }
+                          className={
+                            currentPage === totalPages
+                              ? 'pointer-events-none opacity-50'
+                              : 'cursor-pointer'
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   )
 }

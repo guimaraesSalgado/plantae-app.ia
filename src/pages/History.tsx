@@ -2,31 +2,26 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
-  Loader2,
   History as HistoryIcon,
   Droplets,
-  Sprout,
-  Scissors,
-  Camera,
-  Bug,
-  Circle,
-  Trash2,
   Edit,
   PlusCircle,
   AlertTriangle,
   Star,
   RefreshCw,
+  Trash2,
+  Circle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ActivityService, ActivityLog } from '@/services/activity'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
 import { LazyImage } from '@/components/LazyImage'
+import { ActivityLogSkeleton } from '@/components/Skeletons'
 
 export default function History() {
   const navigate = useNavigate()
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<ActivityLog[]>([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
@@ -170,8 +165,10 @@ export default function History() {
         )}
 
         {isLoading && (
-          <div className="flex justify-center py-4 ml-[-16px]">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ActivityLogSkeleton key={i} />
+            ))}
           </div>
         )}
       </div>
