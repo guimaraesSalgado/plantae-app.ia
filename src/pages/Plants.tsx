@@ -73,11 +73,11 @@ export default function Plants() {
 
   useEffect(() => {
     loadPlants()
-  }, [plantsPage])
+  }, [loadPlants])
 
   useEffect(() => {
     loadActivities()
-  }, [activitiesPage])
+  }, [loadActivities])
 
   const lastPlantRef = useCallback(
     (node: HTMLDivElement) => {
