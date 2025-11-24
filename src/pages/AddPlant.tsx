@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Camera,
@@ -41,6 +41,51 @@ export default function AddPlant() {
     cuidados_recomendados: [],
   })
 
+  const analyzeImage = useCallback(
+    async (image: string) => {
+      setIsAnalyzing(true)
+      setAnalysisError(null)
+
+      try {
+        const result = await identifyPlant(image)
+
+        setFormData((prev) => ({
+          ...prev,
+          nome_conhecido: result.nome_conhecido || '',
+          nome_cientifico: result.nome_cientifico || '',
+          observacoes: result.observacoes || '',
+          cuidados_recomendados: result.cuidados_recomendados || [],
+          status_saude: result.status_saude,
+          pontos_positivos: result.pontos_positivos,
+          pontos_negativos: result.pontos_negativos,
+          sexo: result.sexo,
+          tempo_de_vida_aproximado_dias: result.tempo_de_vida_aproximado_dias,
+          // Auto-fill nickname if empty
+          apelido: prev.apelido || result.nome_conhecido || '',
+        }))
+
+        toast({
+          title: 'Planta identificada!',
+          description: 'Encontramos algumas informações sobre a sua planta.',
+          className: 'bg-green-600 text-white border-none',
+        })
+      } catch (error) {
+        console.error(error)
+        setAnalysisError(
+          'Não conseguimos identificar essa planta automaticamente. Você pode preencher os dados manualmente.',
+        )
+        toast({
+          variant: 'destructive',
+          title: 'Erro na identificação',
+          description: 'Preencha os dados manualmente.',
+        })
+      } finally {
+        setIsAnalyzing(false)
+      }
+    },
+    [toast],
+  )
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -57,54 +102,7 @@ export default function AddPlant() {
     if (imagePreview) {
       analyzeImage(imagePreview)
     }
-  }, [imagePreview])
-
-  const analyzeImage = async (image: string) => {
-    setIsAnalyzing(true)
-    setAnalysisError(null)
-
-    // Reset form but keep user entered nickname if any?
-    // User story says "Automatic pre-filling", implies overwrite or fresh start.
-    // We'll reset identification fields but keep nickname if user typed it before image?
-    // Usually image is first step. Let's overwrite to be safe or just fill empty.
-
-    try {
-      const result = await identifyPlant(image)
-
-      setFormData((prev) => ({
-        ...prev,
-        nome_conhecido: result.nome_conhecido || '',
-        nome_cientifico: result.nome_cientifico || '',
-        observacoes: result.observacoes || '',
-        cuidados_recomendados: result.cuidados_recomendados || [],
-        status_saude: result.status_saude,
-        pontos_positivos: result.pontos_positivos,
-        pontos_negativos: result.pontos_negativos,
-        sexo: result.sexo,
-        tempo_de_vida_aproximado_dias: result.tempo_de_vida_aproximado_dias,
-        // Auto-fill nickname if empty
-        apelido: prev.apelido || result.nome_conhecido || '',
-      }))
-
-      toast({
-        title: 'Planta identificada!',
-        description: 'Encontramos algumas informações sobre a sua planta.',
-        className: 'bg-green-600 text-white border-none',
-      })
-    } catch (error) {
-      console.error(error)
-      setAnalysisError(
-        'Não conseguimos identificar essa planta automaticamente. Você pode preencher os dados manualmente.',
-      )
-      toast({
-        variant: 'destructive',
-        title: 'Erro na identificação',
-        description: 'Preencha os dados manualmente.',
-      })
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
+  }, [imagePreview, analyzeImage])
 
   const handleSave = async () => {
     if (!imagePreview) return
