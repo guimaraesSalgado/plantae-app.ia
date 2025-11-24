@@ -1,25 +1,26 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Camera,
   Loader2,
   ArrowLeft,
-  CheckCircle2,
-  RefreshCw,
+  Save,
   Leaf,
-  Info,
+  AlertCircle,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { identifyPlant, AIAnalysisResult } from '@/services/plantsAI'
 import { PlantsService } from '@/services/plants'
 import { StorageService } from '@/services/storage'
 import { Planta } from '@/types'
 import { ScanningEffect } from '@/components/ScanningEffect'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function AddPlant() {
   const navigate = useNavigate()
@@ -27,12 +28,18 @@ export default function AddPlant() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [nickname, setNickname] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(
-    null,
-  )
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+
+  // Form State
+  const [formData, setFormData] = useState<Partial<Planta>>({
+    apelido: '',
+    nome_conhecido: '',
+    nome_cientifico: '',
+    observacoes: '',
+    cuidados_recomendados: [],
+  })
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -40,82 +47,97 @@ export default function AddPlant() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
-        setAnalysisResult(null) // Reset analysis if image changes
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleAnalyze = async () => {
-    if (!imagePreview) return
+  // Auto-analyze when image changes
+  useEffect(() => {
+    if (imagePreview) {
+      analyzeImage(imagePreview)
+    }
+  }, [imagePreview])
 
+  const analyzeImage = async (image: string) => {
     setIsAnalyzing(true)
+    setAnalysisError(null)
+
+    // Reset form but keep user entered nickname if any?
+    // User story says "Automatic pre-filling", implies overwrite or fresh start.
+    // We'll reset identification fields but keep nickname if user typed it before image?
+    // Usually image is first step. Let's overwrite to be safe or just fill empty.
+
     try {
-      const result = await identifyPlant(imagePreview)
-      setAnalysisResult(result)
-      // Auto-fill nickname if empty
-      if (!nickname && result.nome_conhecido) {
-        setNickname(result.nome_conhecido)
-      }
+      const result = await identifyPlant(image)
+
+      setFormData((prev) => ({
+        ...prev,
+        nome_conhecido: result.nome_conhecido || '',
+        nome_cientifico: result.nome_cientifico || '',
+        observacoes: result.observacoes || '',
+        cuidados_recomendados: result.cuidados_recomendados || [],
+        status_saude: result.status_saude,
+        pontos_positivos: result.pontos_positivos,
+        pontos_negativos: result.pontos_negativos,
+        sexo: result.sexo,
+        tempo_de_vida_aproximado_dias: result.tempo_de_vida_aproximado_dias,
+        // Auto-fill nickname if empty
+        apelido: prev.apelido || result.nome_conhecido || '',
+      }))
+
       toast({
-        title: 'Análise concluída!',
-        description: `Identificamos sua planta como ${result.nome_conhecido}.`,
-        className: 'bg-brand-green text-white border-none',
+        title: 'Planta identificada!',
+        description: 'Encontramos algumas informações sobre a sua planta.',
+        className: 'bg-green-600 text-white border-none',
       })
     } catch (error) {
+      console.error(error)
+      setAnalysisError(
+        'Não conseguimos identificar essa planta automaticamente. Você pode preencher os dados manualmente.',
+      )
       toast({
         variant: 'destructive',
-        title: 'Erro na análise',
-        description: 'Não foi possível identificar a planta. Tente novamente.',
+        title: 'Erro na identificação',
+        description: 'Preencha os dados manualmente.',
       })
     } finally {
       setIsAnalyzing(false)
     }
   }
 
-  const handleRetake = () => {
-    setImagePreview(null)
-    setAnalysisResult(null)
-    setNickname('')
-    fileInputRef.current?.click()
-  }
-
   const handleSave = async () => {
-    if (!imagePreview || !analysisResult) return
+    if (!imagePreview) return
+    if (!formData.apelido) {
+      toast({ variant: 'destructive', title: 'O apelido é obrigatório' })
+      return
+    }
 
     setIsSaving(true)
     try {
-      // 1. Upload Image to Supabase Storage
       const publicUrl = await StorageService.uploadBase64Image(
         imagePreview,
         'plant-photos',
       )
+      if (!publicUrl) throw new Error('Falha ao enviar imagem')
 
-      if (!publicUrl) {
-        throw new Error('Falha ao enviar imagem')
-      }
-
-      // 2. Create Plant in DB
       const newPlant: Omit<Planta, 'id' | 'createdAt'> = {
-        apelido: nickname || analysisResult.nome_conhecido || 'Minha Planta',
-        nome_conhecido: analysisResult.nome_conhecido || 'Desconhecida',
-        nome_cientifico: analysisResult.nome_cientifico,
+        apelido: formData.apelido,
+        nome_conhecido: formData.nome_conhecido || 'Desconhecida',
+        nome_cientifico: formData.nome_cientifico,
         foto_url: publicUrl,
-        status_saude: analysisResult.status_saude || 'desconhecido',
-        sexo: analysisResult.sexo,
-        tempo_de_vida_aproximado_dias:
-          analysisResult.tempo_de_vida_aproximado_dias,
-        pontos_positivos: analysisResult.pontos_positivos || [],
-        pontos_negativos: analysisResult.pontos_negativos || [],
-        cuidados_recomendados: analysisResult.cuidados_recomendados || [],
-        vitaminas_e_adubos: analysisResult.vitaminas_e_adubos || [],
-        datas_importantes: analysisResult.datas_importantes || {},
+        status_saude: formData.status_saude || 'desconhecido',
+        sexo: formData.sexo,
+        tempo_de_vida_aproximado_dias: formData.tempo_de_vida_aproximado_dias,
+        pontos_positivos: formData.pontos_positivos || [],
+        pontos_negativos: formData.pontos_negativos || [],
+        cuidados_recomendados: formData.cuidados_recomendados || [],
+        vitaminas_e_adubos: [],
+        datas_importantes: {},
         logs: [],
-        // Initialize new columns
-        proxima_data_rega:
-          analysisResult.datas_importantes?.proxima_rega_sugerida || null,
-        ultima_analise:
-          analysisResult.datas_importantes?.ultima_analise || null,
+        observacoes: formData.observacoes,
+        proxima_data_rega: null,
+        ultima_analise: new Date().toISOString(),
       }
 
       const savedPlant = await PlantsService.createPlant(newPlant)
@@ -123,18 +145,15 @@ export default function AddPlant() {
       if (savedPlant) {
         toast({
           title: 'Planta salva!',
-          description: 'Sua planta foi adicionada ao jardim.',
+          description: 'Adicionada ao seu jardim.',
         })
         navigate('/')
-      } else {
-        throw new Error('Falha ao salvar planta no banco de dados')
       }
     } catch (error) {
-      console.error(error)
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
-        description: 'Ocorreu um erro ao salvar sua planta. Tente novamente.',
+        description: 'Tente novamente.',
       })
     } finally {
       setIsSaving(false)
@@ -142,201 +161,195 @@ export default function AddPlant() {
   }
 
   return (
-    <div className="space-y-6 pb-10 animate-fade-in">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="space-y-6 pb-24 animate-fade-in">
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="feature-title mb-0">Nova Planta</h1>
+        <h1 className="feature-title mb-0">Adicionar Planta</h1>
       </div>
 
       <div className="space-y-6">
-        {/* Image Upload Area */}
-        <div className="flex justify-center">
-          <div
-            className="relative w-full max-w-sm aspect-square rounded-3xl bg-secondary/30 border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:bg-secondary/50 transition-all duration-300 shadow-sm group"
-            onClick={() =>
-              !isAnalyzing && !isSaving && fileInputRef.current?.click()
-            }
-          >
-            {imagePreview ? (
-              <>
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-                <ScanningEffect active={isAnalyzing} />
-                {!isAnalyzing && !analysisResult && !isSaving && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-white font-medium flex items-center gap-2">
-                      <Camera className="h-5 w-5" /> Alterar foto
-                    </p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center p-6 text-muted-foreground group-hover:scale-105 transition-transform">
-                <div className="bg-white p-4 rounded-full shadow-sm inline-block mb-4">
-                  <Camera className="h-8 w-8 text-brand-green" />
+        {/* Image Selection */}
+        <div
+          className="relative w-full aspect-video rounded-2xl bg-secondary/30 border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:bg-secondary/50 transition-all group"
+          onClick={() =>
+            !isAnalyzing && !isSaving && fileInputRef.current?.click()
+          }
+        >
+          {imagePreview ? (
+            <>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+              <ScanningEffect active={isAnalyzing} />
+              {!isAnalyzing && (
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <p className="text-white font-medium flex items-center gap-2">
+                    <Camera className="h-5 w-5" /> Trocar foto
+                  </p>
                 </div>
-                <p className="text-base font-semibold text-foreground">
-                  Tirar ou escolher foto
-                </p>
-                <p className="text-sm mt-1">
-                  Para identificar sua planta automaticamente
-                </p>
+              )}
+            </>
+          ) : (
+            <div className="text-center p-6 text-muted-foreground">
+              <div className="bg-background p-4 rounded-full shadow-sm inline-block mb-3">
+                <ImageIcon className="h-8 w-8 text-primary" />
+              </div>
+              <p className="font-medium text-foreground">
+                Toque para adicionar foto
+              </p>
+              <p className="text-sm">Câmera ou Galeria</p>
+            </div>
+          )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={isAnalyzing || isSaving}
+          />
+        </div>
+
+        {/* Analysis Status */}
+        {isAnalyzing && (
+          <div className="flex items-center justify-center gap-2 text-primary animate-pulse">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="font-medium">Analisando sua planta...</span>
+          </div>
+        )}
+
+        {analysisError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro na identificação</AlertTitle>
+            <AlertDescription>{analysisError}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Form Fields */}
+        <div
+          className={`space-y-4 transition-opacity duration-500 ${isAnalyzing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="apelido">Apelido (Obrigatório)</Label>
+            <Input
+              id="apelido"
+              value={formData.apelido}
+              onChange={(e) =>
+                setFormData({ ...formData, apelido: e.target.value })
+              }
+              placeholder="Ex: Minha Jiboia"
+              className="text-lg"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome_conhecido">Nome Popular</Label>
+              <Input
+                id="nome_conhecido"
+                value={formData.nome_conhecido}
+                onChange={(e) =>
+                  setFormData({ ...formData, nome_conhecido: e.target.value })
+                }
+                placeholder="Identificado pela IA"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nome_cientifico">Nome Científico</Label>
+              <Input
+                id="nome_cientifico"
+                value={formData.nome_cientifico}
+                onChange={(e) =>
+                  setFormData({ ...formData, nome_cientifico: e.target.value })
+                }
+                placeholder="Identificado pela IA"
+                className="italic"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Descrição / Observações</Label>
+            <Textarea
+              id="observacoes"
+              value={formData.observacoes}
+              onChange={(e) =>
+                setFormData({ ...formData, observacoes: e.target.value })
+              }
+              placeholder="Detalhes sobre a planta..."
+              className="min-h-[100px]"
+            />
+          </div>
+
+          {/* Care Recommendations Preview/Edit */}
+          <div className="space-y-2">
+            <Label>Cuidados Recomendados</Label>
+            {formData.cuidados_recomendados &&
+            formData.cuidados_recomendados.length > 0 ? (
+              <div className="grid gap-3">
+                {formData.cuidados_recomendados.map((care, idx) => (
+                  <Card key={idx} className="bg-secondary/20 border-border">
+                    <CardContent className="p-3">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold capitalize text-primary">
+                          {care.tipo_cuidado}
+                        </span>
+                        <span className="text-xs bg-background px-2 py-1 rounded border">
+                          {care.frequencia_sugerida}
+                        </span>
+                      </div>
+                      <Input
+                        value={care.descricao}
+                        onChange={(e) => {
+                          const newCare = [
+                            ...(formData.cuidados_recomendados || []),
+                          ]
+                          newCare[idx] = {
+                            ...newCare[idx],
+                            descricao: e.target.value,
+                          }
+                          setFormData({
+                            ...formData,
+                            cuidados_recomendados: newCare,
+                          })
+                        }}
+                        className="h-8 text-sm mt-1"
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground italic p-4 border border-dashed rounded-xl text-center">
+                Nenhum cuidado identificado automaticamente.
               </div>
             )}
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={isAnalyzing || isSaving}
-            />
           </div>
         </div>
 
-        {/* Analysis Result or Initial Form */}
-        {analysisResult ? (
-          <div className="animate-slide-up space-y-6">
-            <Card className="border-brand-green/30 bg-brand-light/30 overflow-hidden">
-              <div className="bg-brand-green/10 p-3 border-b border-brand-green/10 flex justify-between items-center">
-                <div className="flex items-center gap-2 text-brand-dark font-semibold">
-                  <CheckCircle2 className="h-5 w-5 text-brand-green" />
-                  <span>Identificação Concluída</span>
-                </div>
-                {analysisResult.confidence && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-white text-brand-dark"
-                  >
-                    {(analysisResult.confidence * 100).toFixed(0)}% de precisão
-                  </Badge>
-                )}
-              </div>
-              <CardContent className="p-5 space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">
-                    Espécie Identificada
-                  </p>
-                  <p className="text-2xl font-bold text-brand-dark mt-1">
-                    {analysisResult.nome_conhecido}
-                  </p>
-                  {analysisResult.nome_cientifico && (
-                    <p className="text-sm text-muted-foreground italic">
-                      {analysisResult.nome_cientifico}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-3 rounded-xl border border-border/50">
-                    <p className="text-xs text-muted-foreground mb-1">Saúde</p>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-3 h-3 rounded-full ${
-                          analysisResult.status_saude === 'saudavel'
-                            ? 'bg-green-500'
-                            : analysisResult.status_saude === 'atencao'
-                              ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                        }`}
-                      />
-                      <span className="capitalize font-medium text-sm">
-                        {analysisResult.status_saude}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 rounded-xl border border-border/50">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Cuidados
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Leaf className="h-4 w-4 text-brand-green" />
-                      <span className="font-medium text-sm">
-                        {analysisResult.cuidados_recomendados?.length || 0}{' '}
-                        sugestões
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-2">
-              <Label htmlFor="nickname">Apelido da planta</Label>
-              <Input
-                id="nickname"
-                placeholder="Como você quer chamar ela?"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="bg-white h-12 text-lg"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-12 rounded-xl border-brand-earth/20 text-brand-earth hover:bg-brand-light"
-                onClick={handleRetake}
-                disabled={isSaving}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Tentar outra
-              </Button>
-              <Button
-                className="flex-[2] h-12 rounded-xl bg-brand-green hover:bg-brand-dark text-white shadow-lg shadow-brand-green/20"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  'Adicionar ao Jardim'
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 animate-fade-in">
-            {imagePreview && (
-              <Button
-                className="w-full h-14 text-lg rounded-xl bg-brand-dark hover:bg-brand-dark/90 text-white shadow-lg transition-all hover:scale-[1.02]"
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Analisando imagem...
-                  </>
-                ) : (
-                  <>
-                    <Leaf className="mr-2 h-5 w-5" />
-                    Identificar Planta
-                  </>
-                )}
-              </Button>
-            )}
-
-            {!imagePreview && (
-              <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start text-blue-800 text-sm">
-                <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <p>
-                  Tire uma foto clara e bem iluminada da sua planta para que
-                  nossa IA possa identificar a espécie e sugerir os melhores
-                  cuidados.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Save Button */}
+        <Button
+          className="w-full h-14 text-lg rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg mt-6"
+          onClick={handleSave}
+          disabled={isAnalyzing || isSaving || !imagePreview}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-5 w-5" />
+              Salvar Planta
+            </>
+          )}
+        </Button>
       </div>
     </div>
   )

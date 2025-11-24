@@ -51,7 +51,6 @@ export interface Planta {
   observacoes?: string
   createdAt: string
   updatedAt?: string
-  // New columns
   proxima_data_rega?: string | null
   ultima_analise?: string | null
 }
