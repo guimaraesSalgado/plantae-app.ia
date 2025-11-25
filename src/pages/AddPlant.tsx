@@ -86,14 +86,24 @@ export default function AddPlant() {
     [toast],
   )
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+      try {
+        // Compress image before setting preview and analyzing
+        // This significantly reduces payload size for the Edge Function
+        const compressedBlob = await StorageService.compressImage(file)
+        const base64 = await StorageService.blobToBase64(compressedBlob)
+        setImagePreview(base64)
+      } catch (error) {
+        console.error('Error compressing image:', error)
+        // Fallback to original file if compression fails
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string)
+        }
+        reader.readAsDataURL(file)
       }
-      reader.readAsDataURL(file)
     }
   }
 

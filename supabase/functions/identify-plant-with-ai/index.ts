@@ -29,6 +29,7 @@ export const onRequest = async (req: Request) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
+        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',
@@ -64,7 +65,7 @@ export const onRequest = async (req: Request) => {
     }
 
     const content = data.choices[0].message.content
-    // Clean up markdown if present (e.g. ```json ... ```)
+    // Clean up markdown if present (e.g. ```json ... ```) - though json_object mode should avoid this
     const jsonStr = content.replace(/```json\n?|```/g, '').trim()
     const result = JSON.parse(jsonStr)
 

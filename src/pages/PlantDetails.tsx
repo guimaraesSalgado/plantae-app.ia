@@ -51,6 +51,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { ScanningEffect } from '@/components/ScanningEffect'
 import { cn } from '@/lib/utils'
 import { PlantDetailsSkeleton } from '@/components/Skeletons'
+import { StorageService } from '@/services/storage'
 
 export default function PlantDetails() {
   const { id } = useParams<{ id: string }>()
@@ -97,69 +98,66 @@ export default function PlantDetails() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && plant) {
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const newImage = reader.result as string
-        setIsRefreshing(true)
-        try {
-          const result = await identifyPlant(newImage)
+      setIsRefreshing(true)
+      try {
+        // Compress image before sending to AI
+        const compressedBlob = await StorageService.compressImage(file)
+        const newImage = await StorageService.blobToBase64(compressedBlob)
 
-          const updates: Partial<Planta> = {
-            status_saude: result.status_saude || plant.status_saude,
-            pontos_positivos: result.pontos_positivos || plant.pontos_positivos,
-            pontos_negativos: result.pontos_negativos || plant.pontos_negativos,
-            cuidados_recomendados:
-              result.cuidados_recomendados || plant.cuidados_recomendados,
-            vitaminas_e_adubos:
-              result.vitaminas_e_adubos || plant.vitaminas_e_adubos,
-            sexo: result.sexo || plant.sexo,
-            tempo_de_vida_aproximado_dias:
-              result.tempo_de_vida_aproximado_dias ||
-              plant.tempo_de_vida_aproximado_dias,
-            datas_importantes: {
-              ...plant.datas_importantes,
-              ultima_analise: new Date().toISOString(),
-              ...result.datas_importantes,
-            },
+        const result = await identifyPlant(newImage)
+
+        const updates: Partial<Planta> = {
+          status_saude: result.status_saude || plant.status_saude,
+          pontos_positivos: result.pontos_positivos || plant.pontos_positivos,
+          pontos_negativos: result.pontos_negativos || plant.pontos_negativos,
+          cuidados_recomendados:
+            result.cuidados_recomendados || plant.cuidados_recomendados,
+          vitaminas_e_adubos:
+            result.vitaminas_e_adubos || plant.vitaminas_e_adubos,
+          sexo: result.sexo || plant.sexo,
+          tempo_de_vida_aproximado_dias:
+            result.tempo_de_vida_aproximado_dias ||
+            plant.tempo_de_vida_aproximado_dias,
+          datas_importantes: {
+            ...plant.datas_importantes,
             ultima_analise: new Date().toISOString(),
-          }
-
-          const log: CareLog = {
-            id: uuidv4(),
-            date: new Date().toISOString(),
-            type: 'foto',
-            note: 'Análise de saúde via foto',
-          }
-          updates.logs = [log, ...(plant.logs || [])]
-
-          const updatedPlant = await PlantsService.updatePlant(
-            plant.id,
-            updates,
-          )
-
-          if (updatedPlant) {
-            setPlant(updatedPlant)
-            setLifespan(
-              updatedPlant.tempo_de_vida_aproximado_dias
-                ? updatedPlant.tempo_de_vida_aproximado_dias.toString()
-                : '',
-            )
-            toast({
-              title: 'Saúde atualizada!',
-              description: 'As informações da planta foram renovadas.',
-            })
-          }
-        } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Erro ao atualizar',
-            description: 'Não foi possível reavaliar a planta.',
-          })
-        } finally {
-          setIsRefreshing(false)
+            ...result.datas_importantes,
+          },
+          ultima_analise: new Date().toISOString(),
         }
+
+        const log: CareLog = {
+          id: uuidv4(),
+          date: new Date().toISOString(),
+          type: 'foto',
+          note: 'Análise de saúde via foto',
+        }
+        updates.logs = [log, ...(plant.logs || [])]
+
+        const updatedPlant = await PlantsService.updatePlant(plant.id, updates)
+
+        if (updatedPlant) {
+          setPlant(updatedPlant)
+          setLifespan(
+            updatedPlant.tempo_de_vida_aproximado_dias
+              ? updatedPlant.tempo_de_vida_aproximado_dias.toString()
+              : '',
+          )
+          toast({
+            title: 'Saúde atualizada!',
+            description: 'As informações da planta foram renovadas.',
+          })
+        }
+      } catch (error) {
+        console.error(error)
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao atualizar',
+          description: 'Não foi possível reavaliar a planta.',
+        })
+      } finally {
+        setIsRefreshing(false)
       }
-      reader.readAsDataURL(file)
     }
   }
 
