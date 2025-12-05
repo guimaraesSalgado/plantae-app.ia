@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase/client'
-import { v4 as uuidv4 } from 'uuid'
 
 export const StorageService = {
   async compressImage(file: File | Blob): Promise<Blob> {
@@ -19,8 +18,8 @@ export const StorageService = {
           return
         }
 
-        // Resize logic: Max 1080px
-        const MAX_SIZE = 1080
+        // Optimization: Reduced max size to 800px for faster upload/processing
+        const MAX_SIZE = 800
         let width = img.width
         let height = img.height
 
@@ -40,14 +39,14 @@ export const StorageService = {
         canvas.height = height
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Convert to WebP with 0.8 quality
+        // Optimization: Reduced quality to 0.7 for smaller payload
         canvas.toBlob(
           (blob) => {
             if (blob) resolve(blob)
             else reject(new Error('Compression failed'))
           },
           'image/webp',
-          0.8,
+          0.7,
         )
       }
 
@@ -70,10 +69,11 @@ export const StorageService = {
     bucket: 'avatars' | 'plant-photos',
   ): Promise<string | null> {
     try {
-      // Compress image before upload
+      // Compress image before upload if it's not already compressed
+      // (Assumes caller might have compressed, but doing it again is safe if fast)
       const compressedBlob = await this.compressImage(file)
-      const fileExt = 'webp' // We convert to webp
-      const fileName = `${uuidv4()}.${fileExt}`
+      const fileExt = 'webp'
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
       const filePath = `${fileName}`
 
       const { error: uploadError } = await supabase.storage
@@ -81,6 +81,7 @@ export const StorageService = {
         .upload(filePath, compressedBlob, {
           contentType: 'image/webp',
           cacheControl: '3600',
+          upsert: false,
         })
 
       if (uploadError) {

@@ -5,7 +5,6 @@ import {
   Loader2,
   ArrowLeft,
   Save,
-  Leaf,
   AlertCircle,
   Image as ImageIcon,
 } from 'lucide-react'
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { identifyPlant, AIAnalysisResult } from '@/services/plantsAI'
+import { identifyPlant } from '@/services/plantsAI'
 import { PlantsService } from '@/services/plants'
 import { StorageService } from '@/services/storage'
 import { Planta } from '@/types'
@@ -39,6 +38,9 @@ export default function AddPlant() {
     nome_cientifico: '',
     observacoes: '',
     cuidados_recomendados: [],
+    pontos_positivos: [],
+    pontos_negativos: [],
+    status_saude: 'desconhecido',
   })
 
   const analyzeImage = useCallback(
@@ -55,9 +57,9 @@ export default function AddPlant() {
           nome_cientifico: result.nome_cientifico || '',
           observacoes: result.observacoes || '',
           cuidados_recomendados: result.cuidados_recomendados || [],
-          status_saude: result.status_saude,
-          pontos_positivos: result.pontos_positivos,
-          pontos_negativos: result.pontos_negativos,
+          status_saude: result.status_saude || 'desconhecido',
+          pontos_positivos: result.pontos_positivos || [],
+          pontos_negativos: result.pontos_negativos || [],
           sexo: result.sexo,
           tempo_de_vida_aproximado_dias: result.tempo_de_vida_aproximado_dias,
           // Auto-fill nickname if empty
@@ -72,7 +74,7 @@ export default function AddPlant() {
       } catch (error) {
         console.error(error)
         setAnalysisError(
-          'Não conseguimos identificar essa planta automaticamente. Você pode preencher os dados manualmente.',
+          'Não conseguimos identificar essa planta automaticamente. Por favor, preencha os dados manualmente.',
         )
         toast({
           variant: 'destructive',
@@ -90,6 +92,7 @@ export default function AddPlant() {
     const file = e.target.files?.[0]
     if (file) {
       try {
+        setAnalysisError(null)
         // Compress image before setting preview and analyzing
         // This significantly reduces payload size for the Edge Function
         const compressedBlob = await StorageService.compressImage(file)
@@ -123,6 +126,7 @@ export default function AddPlant() {
 
     setIsSaving(true)
     try {
+      // Upload the processed/compressed image
       const publicUrl = await StorageService.uploadBase64Image(
         imagePreview,
         'plant-photos',
@@ -141,7 +145,9 @@ export default function AddPlant() {
         pontos_negativos: formData.pontos_negativos || [],
         cuidados_recomendados: formData.cuidados_recomendados || [],
         vitaminas_e_adubos: [],
-        datas_importantes: {},
+        datas_importantes: {
+          ultima_analise: new Date().toISOString(),
+        },
         logs: [],
         observacoes: formData.observacoes,
         proxima_data_rega: null,
@@ -158,10 +164,11 @@ export default function AddPlant() {
         navigate('/')
       }
     } catch (error) {
+      console.error(error)
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
-        description: 'Tente novamente.',
+        description: 'Verifique sua conexão e tente novamente.',
       })
     } finally {
       setIsSaving(false)
@@ -226,14 +233,16 @@ export default function AddPlant() {
         {isAnalyzing && (
           <div className="flex items-center justify-center gap-2 text-primary animate-pulse">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="font-medium">Analisando sua planta...</span>
+            <span className="font-medium">
+              Analisando planta e obtendo cuidados...
+            </span>
           </div>
         )}
 
         {analysisError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Erro na identificação</AlertTitle>
+            <AlertTitle>Atenção</AlertTitle>
             <AlertDescription>{analysisError}</AlertDescription>
           </Alert>
         )}

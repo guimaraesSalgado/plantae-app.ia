@@ -21,6 +21,7 @@ export const onRequest = async (req: Request) => {
       throw new Error('OPENAI_API_KEY not configured')
     }
 
+    // Using gpt-4o-mini for faster response times and lower latency to avoid timeouts
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -28,25 +29,25 @@ export const onRequest = async (req: Request) => {
         Authorization: `Bearer ${openAiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',
             content:
-              'You are a botanist expert. Identify the plant in the image. Return ONLY a valid JSON object (no markdown) with the following structure: { "nome_popular": string, "nome_cientifico": string, "descricao": string (brief summary), "cuidados_recomendados": [{ "tipo_cuidado": "rega" | "luz" | "adubacao" | "temperatura" | "outro", "descricao": string, "frequencia_sugerida": string, "intervalo_dias": number }], "pontos_positivos": string[], "pontos_negativos": string[], "status_saude": "saudavel" | "atencao" | "critico", "sexo": "Masculino" | "Feminino" | "Hermafrodita" | null, "tempo_de_vida_aproximado_dias": number }. Language: Portuguese.',
+              'You are a botanist expert. Identify the plant in the image. Return ONLY a valid JSON object (no markdown) with the following structure: { "nome_popular": string, "nome_cientifico": string, "descricao": string (max 200 chars), "cuidados_recomendados": [{ "tipo_cuidado": "rega" | "luz" | "adubacao" | "temperatura" | "outro", "descricao": string, "frequencia_sugerida": string, "intervalo_dias": number }], "pontos_positivos": string[], "pontos_negativos": string[], "status_saude": "saudavel" | "atencao" | "critico", "sexo": "Masculino" | "Feminino" | "Hermafrodita" | null, "tempo_de_vida_aproximado_dias": number }. Language: Portuguese.',
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Identify this plant and provide care details.',
+                text: 'Identify this plant and analyze its health.',
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: image, // Base64 data URL or public URL
+                  url: image,
                 },
               },
             ],
@@ -57,15 +58,21 @@ export const onRequest = async (req: Request) => {
       }),
     })
 
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('OpenAI API Error:', errorData)
+      throw new Error(`Erro na API da OpenAI: ${response.status}`)
+    }
+
     const data = await response.json()
 
     if (data.error) {
-      console.error('OpenAI Error:', data.error)
+      console.error('OpenAI Error Data:', data.error)
       throw new Error(data.error.message || 'Erro na análise da IA')
     }
 
     const content = data.choices[0].message.content
-    // Clean up markdown if present (e.g. ```json ... ```) - though json_object mode should avoid this
+    // Ensure clean JSON parsing
     const jsonStr = content.replace(/```json\n?|```/g, '').trim()
     const result = JSON.parse(jsonStr)
 

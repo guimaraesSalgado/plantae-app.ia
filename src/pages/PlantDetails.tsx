@@ -47,7 +47,6 @@ import { Planta, CareLog } from '@/types'
 import { format, parseISO, differenceInDays, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CareHistory } from '@/components/CareHistory'
-import { v4 as uuidv4 } from 'uuid'
 import { ScanningEffect } from '@/components/ScanningEffect'
 import { cn } from '@/lib/utils'
 import { PlantDetailsSkeleton } from '@/components/Skeletons'
@@ -127,7 +126,7 @@ export default function PlantDetails() {
         }
 
         const log: CareLog = {
-          id: uuidv4(),
+          id: crypto.randomUUID(),
           date: new Date().toISOString(),
           type: 'foto',
           note: 'Análise de saúde via foto',
@@ -165,7 +164,7 @@ export default function PlantDetails() {
     if (!plant) return
 
     const log: CareLog = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       date: new Date().toISOString(),
       type: newLogType as CareLog['type'],
       note: newLogNote,
@@ -299,6 +298,7 @@ export default function PlantDetails() {
           className="hidden"
           accept="image/*"
           onChange={handleFileChange}
+          disabled={isRefreshing}
         />
       </div>
 

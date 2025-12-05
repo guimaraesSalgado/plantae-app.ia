@@ -16,12 +16,18 @@ export const identifyPlant = async (
       },
     )
 
-    if (error) throw error
-    if (data.error) throw new Error(data.error)
+    if (error) {
+      console.error('Supabase Function Error:', error)
+      throw error
+    }
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
 
     // Map the response to our internal type structure
     return {
-      nome_conhecido: data.nome_popular,
+      nome_conhecido: data.nome_popular || 'Desconhecida',
       nome_cientifico: data.nome_cientifico,
       observacoes: data.descricao,
       cuidados_recomendados: data.cuidados_recomendados || [],
@@ -30,7 +36,7 @@ export const identifyPlant = async (
       status_saude: data.status_saude || 'desconhecido',
       sexo: data.sexo,
       tempo_de_vida_aproximado_dias: data.tempo_de_vida_aproximado_dias,
-      vitaminas_e_adubos: [], // AI might not return this specific structure yet
+      vitaminas_e_adubos: [],
       datas_importantes: {
         ultima_analise: new Date().toISOString(),
       },
