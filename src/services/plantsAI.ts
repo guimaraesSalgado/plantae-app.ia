@@ -9,10 +9,11 @@ export const identifyPlant = async (
   imageBase64: string,
 ): Promise<AIAnalysisResult> => {
   try {
+    // Call the edge function using the standardized 'imageUrl' property
     const { data, error } = await supabase.functions.invoke(
       'identify-plant-with-ai',
       {
-        body: { image: imageBase64 },
+        body: { imageUrl: imageBase64 },
       },
     )
 
@@ -27,7 +28,8 @@ export const identifyPlant = async (
 
     // Map the response to our internal type structure
     return {
-      nome_conhecido: data.nome_popular || 'Desconhecida',
+      nome_conhecido:
+        data.nome_planta_sugerido || data.nome_popular || 'Desconhecida',
       nome_cientifico: data.nome_cientifico,
       observacoes: data.descricao,
       cuidados_recomendados: data.cuidados_recomendados || [],
@@ -40,6 +42,7 @@ export const identifyPlant = async (
       datas_importantes: {
         ultima_analise: new Date().toISOString(),
       },
+      confidence: data.nivel_confianca,
     }
   } catch (error) {
     console.error('AI Identification failed:', error)
